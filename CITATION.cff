@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: PC-MCMC-CIGP
+message: "If you use this software, please cite the accompanying manuscript and this repository."
+type: software
+authors:
+  - name: PC-MCMC-CIGP contributors
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/your-org/pc-mcmc-cigp"
+abstract: "Physically constrained MCMC and Chemical-Informed Gaussian Processes for reaction network discovery and active learning."

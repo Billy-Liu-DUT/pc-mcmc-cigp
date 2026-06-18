@@ -1,0 +1,341 @@
+# PPT 源材料盘点
+
+源文件：`D:\工作二连续流\图\图改.pptx`
+
+幻灯片数量：14
+
+## Slide 1
+- 文本摘要：(无明显文本)
+- 图片对象：1
+- 图表/表格 frame：0
+- 形状对象：0
+
+## Slide 2
+- 文本摘要：(无明显文本)
+- 图片对象：1
+- 图表/表格 frame：0
+- 形状对象：0
+
+## Slide 3
+- 文本摘要：Noisy data / Combinatorial reaction space / Sparsity Prior
+- 图片对象：0
+- 图表/表格 frame：0
+- 形状对象：156
+- 全部文本：
+  - Noisy data
+  - Combinatorial reaction space
+  - Sparsity Prior
+  - Mass/Charge Conservation
+  - Thermodynamic Consistency
+  - Interpretable reaction graph
+  - a  Physically Constrained Structure Search
+  - b  Chemical-Informed Gray-Box Modeling
+  - ODE
+  - Solver
+  - Noisy
+  - Observation
+  - Concentration
+  - Time(s)
+  - c  Physics-Aware Active Learning
+  - Next Experiment
+  - Acquisition Score
+  - Parameter Space
+  - Experimental Feedback Loop
+
+## Slide 4
+- 文本摘要：Global Maximum / (EI target) / Max Sensitivity
+- 图片对象：1
+- 图表/表格 frame：0
+- 形状对象：24
+- 全部文本：
+  - Global Maximum
+  - (EI target)
+  - Max Sensitivity
+  - (GWU target:
+  - )
+  - Model Mismatch
+  - (DH target:
+  - )
+  - Infeasible Region
+  - PC-EI constraint (
+  - )
+  - Reaction Yield
+  - Parameter Space
+  - Strategic Acquisition Landscape
+
+## Slide 5
+- 文本摘要：a / c / b
+- 图片对象：5
+- 图表/表格 frame：0
+- 形状对象：5
+- 全部文本：
+  - a
+  - c
+  - b
+  - e
+  - d
+
+## Slide 6
+- 文本摘要：(无明显文本)
+- 图片对象：0
+- 图表/表格 frame：0
+- 形状对象：0
+
+## Slide 7
+- 文本摘要：Parameter / Symbol / Ground Truth
+- 图片对象：0
+- 图表/表格 frame：4
+- 形状对象：1
+- 全部文本：
+  - Parameter
+  - Symbol
+  - Ground Truth
+  - Discovered (Ours)
+  - Relative Error
+  - Reaction Order
+  - 0.00%
+  - Main Activation Energy
+  - 55.00 kJ/mol
+  - 57.41 kJ/mol
+  - 4.38%
+  - Side Activation Energy
+  - 85.00 kJ/mol
+  - 90.14 kJ/mol
+  - 6.05%
+  - Main Pre-exponential
+  - Order Correct
+  - Side Pre-exponential
+  - Order Correct
+  - Parameter
+  - Symbol
+  - Ground Truth
+  - Discovered (Ours)
+  - Relative Error
+  - Reaction Order
+  - 0.00%
+  - Main Activation Energy
+  - 55.00 kJ/mol
+  - 57.41 kJ/mol
+  - 4.38%
+
+## Slide 8
+- 文本摘要：=============================================================================================== / FINAL OPTIMIZATION REPORT / ==================================
+- 图片对象：0
+- 图表/表格 frame：0
+- 形状对象：1
+- 全部文本：
+  - ===============================================================================================
+  - FINAL OPTIMIZATION REPORT
+  - ===============================================================================================
+  - Iter     | Styrene PAA     Temp(K) Time(s) | Pred     Observed True     | Best
+  - -----------------------------------------------------------------------------------------------
+  - LHS-1    | 1.17    1.10    348.6   167     | N/A      0.5267   0.5456   | 0.5267
+  - LHS-2    | 0.96    0.92    360.6   490     | N/A      0.4005   0.3692   | 0.5267
+  - LHS-3    | 0.83    0.98    331.9   2918    | N/A      0.4706   0.4743   | 0.5267
+  - LHS-4    | 0.89    0.89    309.1   2104    | N/A      0.4393   0.4268   | 0.5267
+  - LHS-5    | 1.14    1.16    370.9   898     | N/A      0.1397   0.1376   | 0.5267
+  - LHS-6    | 1.05    1.19    391.3   1160    | N/A      0.0179   0.0232   | 0.5267
+  - LHS-7    | 1.01    0.87    407.9   1814    | N/A      0.0000   0.0046   | 0.5267
+  - LHS-8    | 1.11    0.81    316.8   3258    | N/A      0.5691   0.6016   | 0.5691
+  - LHS-9    | 0.99    1.07    341.8   2825    | N/A      0.3128   0.3224   | 0.5691
+  - LHS-10   | 0.87    1.02    388.5   2301    | N/A      0.0000   0.0128   | 0.5691
+  - BO-1     | 1.17    1.08    306.0   3177    | 0.6674   0.6409   0.6427   | 0.6409
+  - BO-2     | 0.90    1.06    303.0   3167    | 0.6343   0.4961   0.4852   | 0.6409
+  - BO-3     | 0.88    0.86    379.2   84      | 0.3255   0.3866   0.3901   | 0.6409
+  - BO-4     | 1.06    1.18    315.4   3370    | 0.4791   0.7278   0.7360   | 0.7278
+  - BO-5     | 1.18    1.18    317.3   3306    | 0.5190   0.7788   0.7738   | 0.7788
+  - BO-6     | 1.19    1.18    320.3   2489    | 0.5503   0.7658   0.7625   | 0.7788
+  - BO-7     | 1.19    1.16    319.6   2256    | 0.5736   0.7586   0.7556   | 0.7788
+  - BO-8     | 1.15    1.16    318.9   3258    | 0.5993   0.7404   0.7503   | 0.7788
+  - BO-9     | 1.17    1.19    324.6   1982    | 0.6162   0.7280   0.7427   | 0.7788
+  - BO-10    | 1.17    1.18    322.8   2543    | 0.6245   0.7362   0.7435   | 0.7788
+  - BO-11    | 1.20    1.18    322.2   3416    | 0.6357   0.7302   0.7298   | 0.7788
+  - BO-12    | 1.12    1.17    318.9   3065    | 0.6434   0.7475   0.7438   | 0.7788
+  - BO-13    | 1.18    1.20    320.9   3553    | 0.6552   0.7495   0.7455   | 0.7788
+  - BO-14    | 1.12    1.17    321.3   2713    | 0.6631   0.7360   0.7320   | 0.7788
+  - BO-15    | 1.16    1.18    319.5   2382    | 0.6719   0.7615   0.7514   | 0.7788
+
+## Slide 9
+- 文本摘要：=============================================================================================== / FINAL OPTIMIZATION REPORT (STANDARD BO - FIXED KERNEL) / =====
+- 图片对象：0
+- 图表/表格 frame：0
+- 形状对象：1
+- 全部文本：
+  - ===============================================================================================
+  - FINAL OPTIMIZATION REPORT (STANDARD BO - FIXED KERNEL)
+  - ===============================================================================================
+  - Iter     | Styrene PAA     Temp(K) Time(s) | Pred     Observed True     | Best
+  - -----------------------------------------------------------------------------------------------
+  - LHS-1    | 1.17    1.10    348.6   167     | N/A      0.5415   0.5456   | 0.5415
+  - LHS-2    | 0.96    0.92    360.6   490     | N/A      0.3750   0.3692   | 0.5415
+  - LHS-3    | 0.83    0.98    331.9   2918    | N/A      0.4807   0.4743   | 0.5415
+  - LHS-4    | 0.89    0.89    309.1   2104    | N/A      0.4220   0.4268   | 0.5415
+  - LHS-5    | 1.14    1.16    370.9   898     | N/A      0.1165   0.1376   | 0.5415
+  - LHS-6    | 1.05    1.19    391.3   1160    | N/A      0.0291   0.0232   | 0.5415
+  - LHS-7    | 1.01    0.87    407.9   1814    | N/A      0.0133   0.0046   | 0.5415
+  - LHS-8    | 1.11    0.81    316.8   3258    | N/A      0.6018   0.6016   | 0.6018
+  - LHS-9    | 0.99    1.07    341.8   2825    | N/A      0.3287   0.3224   | 0.6018
+  - LHS-10   | 0.87    1.02    388.5   2301    | N/A      0.0124   0.0128   | 0.6018
+  - BO-1     | 1.19    0.98    315.0   60      | 0.7295   0.0382   0.0508   | 0.6018
+  - BO-2     | 0.99    1.17    332.7   60      | 0.5909   0.1516   0.1404   | 0.6018
+  - BO-3     | 0.98    0.91    304.8   3600    | 0.6511   0.5248   0.5183   | 0.6018
+  - BO-4     | 1.20    0.80    347.5   3600    | 0.5491   0.1420   0.1552   | 0.6018
+  - BO-5     | 0.80    1.20    312.7   3600    | 0.4483   0.6103   0.6077   | 0.6103
+  - BO-6     | 1.20    1.00    383.8   60      | 0.5725   0.4587   0.4628   | 0.6103
+  - BO-7     | 0.98    0.80    318.3   3216    | 0.6079   0.5572   0.5662   | 0.6103
+  - BO-8     | 0.97    1.20    303.0   3600    | 0.4803   0.5744   0.5903   | 0.6103
+  - BO-9     | 1.12    0.80    303.0   3600    | 0.6713   0.4820   0.4866   | 0.6103
+  - BO-10    | 1.09    0.80    315.9   2346    | 0.6932   0.5530   0.5505   | 0.6103
+  - BO-11    | 1.19    1.05    303.0   3600    | 0.4582   0.6188   0.6195   | 0.6188
+  - BO-12    | 0.80    0.80    375.8   60      | 0.4331   0.3558   0.3552   | 0.6188
+  - BO-13    | 1.12    0.94    306.4   2980    | 0.6525   0.5733   0.5627   | 0.6188
+  - BO-14    | 0.80    1.20    413.0   60      | 0.3505   0.1239   0.1326   | 0.6188
+  - BO-15    | 1.20    1.20    303.0   3600    | 0.5830   0.6925   0.6862   | 0.6925
+
+## Slide 10
+- 文本摘要：Equiv. / Equiv. / a
+- 图片对象：4
+- 图表/表格 frame：0
+- 形状对象：11
+- 全部文本：
+  - Equiv.
+  - Equiv.
+  - a
+  - b
+  - c
+  - d
+  - Figure 1: Comparative evaluation of optimization performance between the Standard GP baseline and the proposed CIGP framework.
+  - (a-b)
+  - The 3D exploration trajectories within the design space are visualized, superimposed on the ground truth yield landscape. A scattered search pattern with frequent sampling in low-yield regions is exhibited by the Standard GP
+  - (a)
+  - , whereas the exploration is effectively constrained to the high-yield manifold by CIGP
+  - (b)
+  - .
+  - (c)
+  - Optimization efficiency is quantified by the best-so-far yield trajectory. A significantly faster convergence rate is achieved by CIGP (blue), which approaches the theoretical maximum (green dashed line) within 5 iterations, compared to the slower progression of the baseline (red).
+  - (d)
+  - Process stability and safety are analyzed by tracking the observed yield per iteration. While significant volatility and multiple violations of the efficiency threshold (shaded gray zone,
+  - $<0.2$
+  - M) are demonstrated by the Standard GP, consistent high-yield outcomes are maintained by the proposed method, ensuring zero wasted experiments.
+
+## Slide 11
+- 文本摘要：a / d / c
+- 图片对象：4
+- 图表/表格 frame：0
+- 形状对象：4
+- 全部文本：
+  - a
+  - d
+  - c
+  - b
+
+## Slide 12
+- 文本摘要：============================================================================================================== / Inferred Mechanism Report / ===================
+- 图片对象：2
+- 图表/表格 frame：0
+- 形状对象：1
+- 全部文本：
+  - ==============================================================================================================
+  - Inferred Mechanism Report
+  - ==============================================================================================================
+  - Rank  | Reaction Equation                        | PIP      | k (Est)    | k (True)   | Status
+  - --------------------------------------------------------------------------------------------------------------
+  - 1     | ★ Br. + H2 -> HBr + H.                   | 1.00   | 1.9e+00   | 1.0        |
+  - ✅
+  - HIT
+  - 2     | ★ Br. + Br. -> Br2                       | 1.00   | 1.0e+03   | 100.0      |
+  - ✅
+  - HIT
+  - 3     | ★ Br2 -> Br. + Br.                       | 1.00   | 1.9e+01   | 10.0       |
+  - ✅
+  - HIT
+  - 4     | ★ H. + H. -> H2                          | 0.98   | 1.0e+03   | -          | ⚠️ MISMATCH
+  - 5     | ★ H. + Br2 -> HBr + Br.                  | 0.84   | 1.1e+01   | 50.0       |
+  - ✅
+  - HIT
+  - 6     | ★ H2 -> H. + H.                          | 0.63   | 8.0e+00   | -          | ⚠️ MISMATCH
+  - 7     | H2 + Br2 -> HBr + HBr                    | 0.00   | 5.5e+02   | -          |
+  - 🛡️
+  - REJECT
+  - 8     | ★ HBr + H. -> Br. + H2                   | 0.00   | 1.0e+03   | 0.5        | ⚠️ MISMATCH
+  - --------------------------------------------------------------------------------------------------------------
+  - [Mechanism Integration Analysis]
+  - Based on the AI-selected elementary steps (PIP > 0.5), the mechanism logic is:
+  - + Step: Br. + H2 -> HBr + H.
+  - + Step: Br. + Br. -> Br2
+  - + Step: Br2 -> Br. + Br.
+  - + Step: H. + H. -> H2
+
+## Slide 13
+- 文本摘要：[MCMC] Starting Inference... / 0%|          | 0/10000 [00:00<?, ?it/s]D:\ / 工作二连续流
+- 图片对象：2
+- 图表/表格 frame：0
+- 形状对象：1
+- 全部文本：
+  - [MCMC] Starting Inference...
+  - 0%|          | 0/10000 [00:00<?, ?it/s]D:\
+  - 工作二连续流
+  - \CIGP\mechanism_engine.py:151:
+  - RuntimeWarning
+  - : overflow encountered in
+  - double_scalars
+  - val
+  - *= (C[
+  - s_idx
+  - ] ** power)
+  - D:\
+  - 工作二连续流
+  - \CIGP\mechanism_engine.py:154:
+  - RuntimeWarning
+  - : invalid value encountered in
+  - matmul
+  - return
+  - self.S
+  - @ r
+  - E:\Anaconda3\envs\bayesian\Lib\site-packages\scipy\integrate\_ode.py:1348:
+  - UserWarning
+  - :
+  - lsoda
+  - : Excess accuracy requested (tolerances too small).
+  - warnings.warn
+  - ('{:s}: {:s}'.format(
+  - self.__class__.__name
+  - __,
+  - 0%|          | 11/10000 [00:00<01:52, 89.10it/s]D:\
+
+## Slide 14
+- 文本摘要：============================================================================================================== / Inferred Mechanism Report / ===================
+- 图片对象：0
+- 图表/表格 frame：0
+- 形状对象：1
+- 全部文本：
+  - ==============================================================================================================
+  - Inferred Mechanism Report
+  - ==============================================================================================================
+  - Rank  | Reaction Equation                        | PIP      | k (Est)    | k (True)   | Status
+  - --------------------------------------------------------------------------------------------------------------
+  - 1     | ★ H. + Br2 -> HBr + Br.                  | 1.00   | 1.0e+03   | 50.0       |
+  - ✅
+  - HIT
+  - 2     | ★ Br. + H2 -> HBr + H.                   | 1.00   | 1.6e+00   | 1.0        |
+  - ✅
+  - HIT
+  - 3     | ★ Br. + Br. -> Br2                       | 1.00   | 1.0e+03   | 100.0      |
+  - ✅
+  - HIT
+  - 4     | ★ Br2 -> Br. + Br.                       | 1.00   | 1.9e+01   | 10.0       |
+  - ✅
+  - HIT
+  - 5     | ★ H. + H. -> H2                          | 0.00   | 1.0e+03   | -          |
+  - 🛡️
+  - REJECT
+  - 6     | ★ HBr + H. -> Br. + H2                   | 0.00   | 1.0e+03   | 0.5        | ⚠️ MISMATCH
+  - 7     | H2 + Br2 -> HBr + HBr                    | 0.00   | 1.0e+03   | -          |
+  - 🛡️
+  - REJECT
+  - 8     | ★ H2 -> H. + H.                          | 0.00   | 2.7e+02   | -          |
+  - 🛡️
+  - REJECT
+  - --------------------------------------------------------------------------------------------------------------
+  - [Mechanism Integration Analysis]
+  - Based on the AI-selected elementary steps (PIP > 0.5), the mechanism logic is:

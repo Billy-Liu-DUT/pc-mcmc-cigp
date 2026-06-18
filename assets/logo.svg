@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">PC-MCMC-CIGP logo</title>
+  <desc id="desc">A reaction network ring combined with a Gaussian process curve.</desc>
+  <defs>
+    <linearGradient id="ring" x1="88" y1="88" x2="424" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1F6F8B"/>
+      <stop offset="1" stop-color="#2AA876"/>
+    </linearGradient>
+    <linearGradient id="curve" x1="118" y1="336" x2="394" y2="176" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#23395B"/>
+      <stop offset="1" stop-color="#D95F02"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="#F7FAF9"/>
+  <circle cx="256" cy="256" r="159" fill="none" stroke="url(#ring)" stroke-width="28"/>
+  <path d="M150 311C186 260 208 230 241 246C268 259 270 304 309 291C342 280 360 231 385 193" fill="none" stroke="#CFE7E1" stroke-width="62" stroke-linecap="round" opacity=".85"/>
+  <path d="M150 311C186 260 208 230 241 246C268 259 270 304 309 291C342 280 360 231 385 193" fill="none" stroke="url(#curve)" stroke-width="20" stroke-linecap="round"/>
+  <g fill="#1F6F8B" stroke="#F7FAF9" stroke-width="12">
+    <circle cx="145" cy="150" r="34"/>
+    <circle cx="367" cy="150" r="34"/>
+    <circle cx="383" cy="357" r="34"/>
+    <circle cx="129" cy="357" r="34"/>
+  </g>
+  <g fill="#FFFFFF" stroke="#23395B" stroke-width="10">
+    <circle cx="256" cy="256" r="42"/>
+  </g>
+  <text x="256" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#23395B">μ</text>
+</svg>

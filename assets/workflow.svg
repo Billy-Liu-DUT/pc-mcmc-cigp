@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 310" role="img" aria-labelledby="title desc">
+  <title id="title">PC-MCMC-CIGP workflow</title>
+  <desc id="desc">Workflow from candidate reaction generation to PC-MCMC discovery, CIGP modeling, active learning, and paper-ready outputs.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#23395B"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="310" fill="#F7FAF9"/>
+  <text x="550" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#23395B">PC-MCMC-CIGP Open Reaction Discovery Workflow</text>
+  <g font-family="Arial, sans-serif">
+    <g transform="translate(50 92)">
+      <rect width="180" height="132" rx="18" fill="#FFFFFF" stroke="#B7D9D0" stroke-width="3"/>
+      <text x="90" y="38" text-anchor="middle" font-size="18" font-weight="700" fill="#1F6F8B">Candidate Pool</text>
+      <text x="90" y="70" text-anchor="middle" font-size="14" fill="#23395B">species + atoms</text>
+      <text x="90" y="94" text-anchor="middle" font-size="14" fill="#23395B">balanced reactions</text>
+    </g>
+    <g transform="translate(280 92)">
+      <rect width="180" height="132" rx="18" fill="#FFFFFF" stroke="#B7D9D0" stroke-width="3"/>
+      <text x="90" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1F6F8B">PC-MCMC</text>
+      <text x="90" y="66" text-anchor="middle" font-size="14" fill="#23395B">spike-and-slab</text>
+      <text x="90" y="90" text-anchor="middle" font-size="14" fill="#23395B">PIP + MAP graph</text>
+      <text x="90" y="114" text-anchor="middle" font-size="14" fill="#23395B">R-hat / ESS</text>
+    </g>
+    <g transform="translate(510 92)">
+      <rect width="180" height="132" rx="18" fill="#FFFFFF" stroke="#B7D9D0" stroke-width="3"/>
+      <text x="90" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1F6F8B">CIGP</text>
+      <text x="90" y="66" text-anchor="middle" font-size="14" fill="#23395B">ODE mean</text>
+      <text x="90" y="90" text-anchor="middle" font-size="14" fill="#23395B">GP residual</text>
+      <text x="90" y="114" text-anchor="middle" font-size="14" fill="#23395B">uncertainty</text>
+    </g>
+    <g transform="translate(740 92)">
+      <rect width="180" height="132" rx="18" fill="#FFFFFF" stroke="#B7D9D0" stroke-width="3"/>
+      <text x="90" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1F6F8B">Active Learning</text>
+      <text x="90" y="66" text-anchor="middle" font-size="14" fill="#23395B">EI / GWU / DH</text>
+      <text x="90" y="90" text-anchor="middle" font-size="14" fill="#23395B">PC-EI</text>
+      <text x="90" y="114" text-anchor="middle" font-size="14" fill="#23395B">next experiment</text>
+    </g>
+    <g transform="translate(970 92)">
+      <rect width="80" height="132" rx="18" fill="#FFFFFF" stroke="#B7D9D0" stroke-width="3"/>
+      <text x="40" y="42" text-anchor="middle" font-size="16" font-weight="700" fill="#1F6F8B">Paper</text>
+      <text x="40" y="74" text-anchor="middle" font-size="13" fill="#23395B">CSV</text>
+      <text x="40" y="98" text-anchor="middle" font-size="13" fill="#23395B">PNG</text>
+    </g>
+    <g stroke="#23395B" stroke-width="4" marker-end="url(#arrow)">
+      <line x1="232" y1="158" x2="270" y2="158"/>
+      <line x1="462" y1="158" x2="500" y2="158"/>
+      <line x1="692" y1="158" x2="730" y2="158"/>
+      <line x1="922" y1="158" x2="960" y2="158"/>
+    </g>
+  </g>
+</svg>
