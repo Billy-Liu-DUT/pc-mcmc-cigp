@@ -1,6 +1,6 @@
 # PC-MCMC-CIGP
 
-![CI](https://github.com/your-org/pc-mcmc-cigp/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/Billy-Liu-DUT/pc-mcmc-cigp/actions/workflows/ci.yml/badge.svg)
 
 <p align="center">
   <img src="assets/logo.svg" alt="PC-MCMC-CIGP logo" width="128">
