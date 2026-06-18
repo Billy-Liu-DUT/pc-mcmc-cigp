@@ -125,11 +125,3 @@ To regenerate the Fig.4 comparison from the source PowerPoint data:
 python scripts/extract_ppt_optimization_logs.py "D:/工作二连续流/图/图改.pptx" data
 python scripts/plot_fig4.py
 ```
-
-## Development Status
-
-This is the first open-source-oriented cleanup of a research codebase. The ODE
-engine uses SciPy's `solve_ivp` when available and falls back to a lightweight
-RK4 integrator for minimal environments. Longer MCMC runs, publication-quality
-figures, and full paper reproduction should be treated as experiment scripts
-rather than CI tests.
