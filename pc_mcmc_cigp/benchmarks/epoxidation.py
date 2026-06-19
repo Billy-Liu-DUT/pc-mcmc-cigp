@@ -51,35 +51,71 @@ class EpoxidationBenchmark:
         y_obs = max(0.0, y_true + self.rng.normal(0.0, self.noise_std))
         return y_obs, y_true
 
-    def run_optimization(self, n_initial: int = 5, n_iter: int = 10) -> list[dict]:
+    def run_optimization(
+        self,
+        n_initial: int = 5,
+        n_iter: int = 10,
+        acquisition_name: str = "PC_EI",
+        n_candidates: int = 128,
+    ) -> list[dict]:
         X = self._sample_uniform(n_initial)
-        y = np.array([self.run_experiment(x)[0] for x in X])
-        history = [
-            {"iteration": i, "x": X[i].copy(), "yield": float(y[i]), "best_yield": float(np.max(y[: i + 1]))}
-            for i in range(n_initial)
-        ]
+        outcomes = [self.run_experiment(x) for x in X]
+        y = np.array([observed for observed, _truth in outcomes])
+        history = []
+        for i, (observed, truth) in enumerate(outcomes):
+            history.append(
+                {
+                    "iteration": i,
+                    "phase": "initial",
+                    "acquisition": "INITIAL",
+                    "x": X[i].copy(),
+                    "yield": float(observed),
+                    "truth": float(truth),
+                    "best_yield": float(np.max(y[: i + 1])),
+                }
+            )
         physics = EpoxyPhysics()
 
         for i in range(n_iter):
-            Xn = self._normalize(X)
-            proxy_physics = _NormalizedPhysics(physics, self.bounds)
-            model = CIGPRegressor(
-                proxy_physics,
-                CIGPConfig(max_iters=10, optimize_hyperparameters=False, random_state=int(self.rng.integers(1e9))),
-            ).fit(Xn, y)
-            candidates = self._sample_uniform(128)
-            candidates_n = self._normalize(candidates)
-            acquisition = AcquisitionFactory.create("PC_EI", xi=0.01, threshold=0.05, sharpness=5.0)
-            scores = acquisition.compute(model, candidates_n, y_best=float(np.max(y)))
+            candidates = self._sample_uniform(n_candidates)
+            if acquisition_name == "RANDOM":
+                scores = self.rng.random(n_candidates)
+            else:
+                Xn = self._normalize(X)
+                proxy_physics = _NormalizedPhysics(physics, self.bounds)
+                model = CIGPRegressor(
+                    proxy_physics,
+                    CIGPConfig(
+                        max_iters=10,
+                        optimize_hyperparameters=False,
+                        random_state=int(self.rng.integers(1e9)),
+                    ),
+                ).fit(Xn, y)
+                candidates_n = self._normalize(candidates)
+                if acquisition_name == "UNCERTAINTY":
+                    _mu, var = model.predict(candidates_n)
+                    scores = var.ravel()
+                else:
+                    acquisition = AcquisitionFactory.create(
+                        acquisition_name,
+                        beta=1.0,
+                        xi=0.01,
+                        threshold=0.05,
+                        sharpness=5.0,
+                    )
+                    scores = acquisition.compute(model, candidates_n, y_best=float(np.max(y)))
             x_next = candidates[int(np.argmax(scores))]
-            y_next, _ = self.run_experiment(x_next)
+            y_next, truth_next = self.run_experiment(x_next)
             X = np.vstack([X, x_next])
             y = np.append(y, y_next)
             history.append(
                 {
                     "iteration": n_initial + i,
+                    "phase": "bo",
+                    "acquisition": acquisition_name,
                     "x": x_next.copy(),
                     "yield": float(y_next),
+                    "truth": float(truth_next),
                     "best_yield": float(np.max(y)),
                 }
             )

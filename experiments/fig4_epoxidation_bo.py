@@ -23,14 +23,17 @@ def run_experiment(
     )
     csv_path = output_path / "optimization_history.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
-        fieldnames = ["iteration", "yield", "best_yield", "x0", "x1", "x2", "x3"]
+        fieldnames = ["iteration", "phase", "acquisition", "yield", "truth", "best_yield", "x0", "x1", "x2", "x3"]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         for row in history:
             writer.writerow(
                 {
                     "iteration": row["iteration"],
+                    "phase": row["phase"],
+                    "acquisition": row["acquisition"],
                     "yield": row["yield"],
+                    "truth": row["truth"],
                     "best_yield": row["best_yield"],
                     "x0": row["x"][0],
                     "x1": row["x"][1],

@@ -13,3 +13,17 @@ def test_epoxidation_benchmark_smoke_runs_two_optimization_rounds():
 
     assert len(history) == 5
     assert history[-1]["best_yield"] >= 0.0
+
+
+def test_epoxidation_benchmark_supports_explicit_acquisition_strategies():
+    for strategy in ["PC_EI", "EI", "GWU", "DH", "UNCERTAINTY", "RANDOM"]:
+        history = EpoxidationBenchmark(random_state=2).run_optimization(
+            n_initial=3,
+            n_iter=1,
+            acquisition_name=strategy,
+            n_candidates=16,
+        )
+
+        assert len(history) == 4
+        assert history[-1]["acquisition"] == strategy
+        assert "truth" in history[-1]
