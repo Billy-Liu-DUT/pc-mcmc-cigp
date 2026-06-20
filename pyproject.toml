@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Physically constrained MCMC and Chemical-Informed Gaussian Processes for reaction network discovery."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "CC-BY-NC-4.0"}
 authors = [
   {name = "PC-MCMC-CIGP contributors"}
 ]
@@ -22,7 +22,7 @@ keywords = ["reaction-network", "bayesian-inference", "gaussian-process", "activ
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
+  "License :: Free for non-commercial use",
   "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Chemistry"
 ]
