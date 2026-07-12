@@ -95,6 +95,8 @@ E:\Anaconda3\envs\bayesian\python.exe scripts\run_agent_web.py
 
 麒麟云通道按并发上限 `1` 使用。CIGP服务内部使用全局信号量串行发送所有LLM请求；即使浏览器同时触发项目解析和机理生成，也只会有一个外部请求处于执行状态。不要启动多个独立CIGP服务进程共用同一密钥，否则进程间无法共享这个并发锁。
 
+2026-07-12实测：`/v1/models` 和 `/v1/responses` 均返回HTTP 200，模型列表包含 `gpt-5.5`，Responses响应确认实际模型为 `gpt-5.5`。该验证仅说明当前Key和渠道在测试时可用，不应把Key写入仓库或日志。
+
 ## 尚未实现
 
 - OpenAI Responses API / Agents SDK；

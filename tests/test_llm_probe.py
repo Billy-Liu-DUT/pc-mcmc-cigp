@@ -25,3 +25,8 @@ def test_probe_preserves_non_json_403_diagnostics(monkeypatch=None):
         assert status==403 and "Access denied" in body["error"]["message"] and body["_http"]["server"]=="cloudflare"
     finally:
         probe_llm_api.urlopen=original
+
+
+def test_probe_extracts_nested_responses_output_text():
+    body={"output":[{"type":"message","content":[{"type":"output_text","text":"API_OK"}]}]}
+    assert probe_llm_api.response_output_text(body)=="API_OK"

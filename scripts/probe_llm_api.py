@@ -51,6 +51,19 @@ def http_metadata(body: dict) -> dict:
     return body.get("_http", {}) if isinstance(body, dict) else {}
 
 
+def response_output_text(body: dict) -> str | None:
+    if isinstance(body.get("output_text"), str):
+        return body["output_text"]
+    texts = []
+    for item in body.get("output", []):
+        if not isinstance(item, dict):
+            continue
+        for content in item.get("content", []):
+            if isinstance(content, dict) and isinstance(content.get("text"), str):
+                texts.append(content["text"])
+    return "\n".join(texts) if texts else None
+
+
 def main() -> int:
     key = os.environ.get("OPENAI_API_KEY", "").strip()
     base = os.environ.get("OPENAI_BASE_URL", "").strip().rstrip("/")
@@ -66,7 +79,7 @@ def main() -> int:
 
     responses_payload = {"model": model, "input": "Reply with exactly: API_OK", "max_output_tokens": 16}
     status, body = request_json(f"{base}/responses", key, responses_payload)
-    output_text = body.get("output_text")
+    output_text = response_output_text(body)
     print(json.dumps({"test": "responses", "status": status, "model": body.get("model"), "output": output_text, "error": None if status == 200 else error_message(body), "http": http_metadata(body)}, ensure_ascii=False))
     if status == 200:
         return 0
