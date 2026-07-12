@@ -68,7 +68,10 @@ class CompatibleResponsesClient:
 
     @staticmethod
     def _http_transport(url,key,payload):
-        request=Request(url,data=json.dumps(payload).encode(),method="POST",headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"})
+        request=Request(url,data=json.dumps(payload).encode(),method="POST",headers={
+            "Authorization":f"Bearer {key}","Content-Type":"application/json","Accept":"application/json",
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) CIGP-Agent/0.1",
+        })
         try:
             with urlopen(request,timeout=90) as response: return json.loads(response.read().decode())
         except HTTPError as exc:
