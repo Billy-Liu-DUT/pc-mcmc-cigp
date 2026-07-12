@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 from dataclasses import dataclass
 from typing import Callable
 from urllib.error import HTTPError, URLError
@@ -14,6 +15,7 @@ from pc_mcmc_cigp.agent_backend.codecs import mechanism_from_dict, project_from_
 class LLMConfigurationError(RuntimeError): pass
 class LLMRequestError(RuntimeError): pass
 Transport = Callable[[str, str, dict], dict]
+_PROVIDER_SEMAPHORE = threading.BoundedSemaphore(1)
 
 
 @dataclass(frozen=True)
@@ -50,7 +52,8 @@ class CompatibleResponsesClient:
         return mechanism_from_dict(payload)
 
     def _json_response(self,instructions,prompt):
-        body=self.transport(f"{self.config.base_url}/responses",self.config.api_key,{"model":self.config.model,"instructions":instructions,"input":prompt,"max_output_tokens":4096})
+        with _PROVIDER_SEMAPHORE:
+            body=self.transport(f"{self.config.base_url}/responses",self.config.api_key,{"model":self.config.model,"instructions":instructions,"input":prompt,"max_output_tokens":4096})
         text=self._extract_text(body); match=re.search(r"\{.*\}",text,re.DOTALL)
         if not match: raise LLMRequestError("model response did not contain a JSON object")
         try: return json.loads(match.group())
@@ -76,5 +79,7 @@ class CompatibleResponsesClient:
 
 
 def client_status():
-    try: return LLMProviderConfig.from_env().public_status()
-    except LLMConfigurationError as exc: return {"configured":False,"base_url":None,"model":None,"provider":None,"message":str(exc)}
+    try:
+        status=LLMProviderConfig.from_env().public_status(); status["max_concurrency"]=1; return status
+    except LLMConfigurationError as exc:
+        return {"configured":False,"base_url":None,"model":None,"provider":None,"max_concurrency":1,"message":str(exc)}

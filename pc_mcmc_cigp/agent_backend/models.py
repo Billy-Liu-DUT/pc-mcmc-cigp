@@ -187,6 +187,7 @@ class AgentRuntimeConfig:
     openai_model: str | None = None
     openai_api_key_env: str = "OPENAI_API_KEY"
     openai_base_url_env: str = "OPENAI_BASE_URL"
+    llm_max_concurrency: int = 1
     api_enabled: bool = False
 
 

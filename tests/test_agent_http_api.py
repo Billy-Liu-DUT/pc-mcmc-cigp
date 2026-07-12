@@ -19,7 +19,7 @@ def test_http_contract_creates_project_plans_experiments_and_serves_dashboard():
         api=ReactionAPI(Path(tmp)/"projects",static)
         assert api.dispatch("GET","/api/health")[0]==200
         status, llm, _ = api.dispatch("GET", "/api/llm/status")
-        assert status == 200 and llm["configured"] is False
+        assert status == 200 and llm["configured"] is False and llm["max_concurrency"] == 1
         status, body, content_type = api.dispatch("GET", "/")
         assert status == 200 and body == b"ok" and content_type == "text/html"
         status,created,_=api.dispatch("POST","/api/projects",_project()); assert status==201
