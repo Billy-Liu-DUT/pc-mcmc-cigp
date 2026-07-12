@@ -186,6 +186,7 @@ class TemplateScore:
 class AgentRuntimeConfig:
     openai_model: str | None = None
     openai_api_key_env: str = "OPENAI_API_KEY"
+    openai_base_url_env: str = "OPENAI_BASE_URL"
     api_enabled: bool = False
 
 

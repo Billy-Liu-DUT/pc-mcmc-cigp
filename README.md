@@ -134,6 +134,11 @@ python scripts/run_agent_web.py
 
 Then open `http://127.0.0.1:8765`. The browser communicates only with the local
 project store and deterministic algorithm services; OpenAI integration remains disabled.
+
+For an optional OpenAI-compatible LLM provider, set `OPENAI_API_KEY`,
+`OPENAI_BASE_URL`, and `OPENAI_MODEL` in the server process. Validate the
+provider first with `python scripts/probe_llm_api.py`; credentials are never
+accepted as command-line arguments or written by the application.
 - `examples/`: runnable scripts for paper-style experiments and baselines.
 
 Chinese documentation:

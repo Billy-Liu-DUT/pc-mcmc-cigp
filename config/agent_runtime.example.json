@@ -1,6 +1,7 @@
 {
   "api_enabled": false,
-  "openai_model": null,
+  "openai_model": "gpt-5.5",
   "openai_api_key_env": "OPENAI_API_KEY",
+  "openai_base_url_env": "OPENAI_BASE_URL",
   "project_root": "projects"
 }

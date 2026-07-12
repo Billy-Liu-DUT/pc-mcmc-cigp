@@ -13,6 +13,7 @@ from pc_mcmc_cigp.agent_backend.codecs import mechanism_from_dict, project_from_
 from pc_mcmc_cigp.agent_backend.frontend import FrontendReadModel, api_placeholder_status
 from pc_mcmc_cigp.agent_backend.workflow import ReactionAgentWorkflow
 from pc_mcmc_cigp.agent_backend.models import MCMCSummary
+from pc_mcmc_cigp.agent_backend.llm_client import CompatibleResponsesClient, LLMConfigurationError, LLMRequestError, client_status
 
 
 class ReactionAPI:
@@ -27,6 +28,14 @@ class ReactionAPI:
             return 200, {"status": "ok", "api": api_placeholder_status(), "service": "pc-mcmc-cigp"}, "application/json"
         if path == "/api/templates" and method == "GET":
             return 200, {"templates": available_template_contracts()}, "application/json"
+        if path == "/api/llm/status" and method == "GET":
+            return 200, client_status(), "application/json"
+        if path == "/api/llm/parse-project" and method == "POST":
+            project=CompatibleResponsesClient.from_env().parse_project(payload["user_request"],payload["project_id"])
+            return 200,{"project":project.to_dict()},"application/json"
+        if path == "/api/llm/propose-mechanism" and method == "POST":
+            mechanism=CompatibleResponsesClient.from_env().propose_mechanism(payload["project"],payload.get("dataset_summary"))
+            return 200,{"mechanism":asdict(mechanism),"graph":self.frontend.mechanism_graph(mechanism)},"application/json"
         if path == "/api/projects" and method == "POST":
             project = project_from_dict(payload); self.workflow.create_project(project)
             return 201, {"project": project.to_dict(), "dashboard": asdict(self.frontend.dashboard(project.project_id))}, "application/json"
@@ -80,7 +89,7 @@ def make_handler(api: ReactionAPI):
                 length = int(self.headers.get("Content-Length", "0")); raw = self.rfile.read(length) if length else b""
                 payload = json.loads(raw.decode("utf-8")) if raw else {}
                 status, body, content_type = api.dispatch(method, urlparse(self.path).path, payload)
-            except (ValueError, KeyError, FileExistsError, FileNotFoundError, PermissionError) as exc:
+            except (ValueError, KeyError, FileExistsError, FileNotFoundError, PermissionError, LLMConfigurationError, LLMRequestError) as exc:
                 status, body, content_type = 400, {"error": type(exc).__name__, "message": str(exc)}, "application/json"
             encoded = json.dumps(body, ensure_ascii=False, default=str).encode("utf-8") if isinstance(body, dict) else body
             self.send_response(status); self.send_header("Content-Type", f"{content_type}; charset=utf-8"); self.send_header("Content-Length", str(len(encoded))); self.end_headers(); self.wfile.write(encoded)

@@ -72,6 +72,27 @@ HTTP层已经提供项目、实验、上传验证、机理注册/批准、PC-MCM
 
 当前不需要 API Key。以后接入时复制为本地配置，并通过环境变量 `OPENAI_API_KEY` 提供密钥。模型名称保持配置化，不写死在算法代码中。
 
+中转或OpenAI兼容接口可使用 `scripts/probe_llm_api.py` 验证。脚本只从当前进程的 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 和 `OPENAI_MODEL` 环境变量读取配置，不接受命令行明文密钥，也不会保存凭据。只有探测成功后才能将 `api_enabled` 改为 `true`。
+
+### 麒麟云接入CIGP Agent
+
+麒麟云配置助手不是CIGP运行依赖，也不需要点击“接入Codex”。CIGP本地服务直接读取三个进程环境变量：
+
+```powershell
+$env:OPENAI_API_KEY='<在当前终端粘贴新Key>'
+$env:OPENAI_BASE_URL='https://www.qilinapi.com/v1'
+$env:OPENAI_MODEL='gpt-5.5'
+E:\Anaconda3\envs\bayesian\python.exe scripts\probe_llm_api.py
+```
+
+探测返回成功后，在同一个终端启动：
+
+```powershell
+E:\Anaconda3\envs\bayesian\python.exe scripts\run_agent_web.py
+```
+
+网页会显示 `gpt-5.5 · 已配置`，并启用自然语言项目解析和候选机理生成。密钥不会写入项目、浏览器存储或审计日志。关闭该终端后，以上进程环境变量随之消失。
+
 ## 尚未实现
 
 - OpenAI Responses API / Agents SDK；

@@ -54,7 +54,7 @@
           <label>目标产物名称 *<input name="product" value="product" required></label>
           <label>产物分子式<input name="product_formula" value="C8H8" placeholder="例如 C8H8O"></label>
           <label class="wide">自然语言目标<textarea name="request" rows="3">研究目标产物形成和后续损失的动力学机理，并优化最终产率。</textarea></label>
-          <div class="actions wide"><button class="primary" type="submit">创建本地项目</button><span id="project-result" class="muted">尚未创建</span></div>
+          <div class="actions wide"><button id="ai-parse-btn" class="secondary" type="button">用LLM解析描述</button><button class="primary" type="submit">创建本地项目</button><span id="project-result" class="muted">尚未创建</span></div>
         </form>
       </section>
 
@@ -74,7 +74,7 @@
       </section>
 
       <section class="page" id="page-mechanism">
-        <div class="section-lead"><div><span class="kicker">MECHANISM COMPILER</span><h2>候选基元反应</h2></div><button id="compile-btn" class="primary">编译机理</button></div>
+        <div class="section-lead"><div><span class="kicker">MECHANISM COMPILER</span><h2>候选基元反应</h2></div><div class="actions"><button id="ai-mechanism-btn" class="secondary">LLM生成候选</button><button id="compile-btn" class="primary">编译机理</button></div></div>
         <div class="mechanism-layout">
           <article class="panel graph-panel"><div class="species-node source" id="node-a">A</div><div class="reaction-arrow"><span>k₁</span><i></i></div><div class="species-node intermediate">I</div><div class="reaction-arrow"><span>k₂</span><i></i></div><div class="species-node product" id="node-p">P</div><div class="graph-caption">可视化仅展示结构；最终是否存在由PC-MCMC后验决定</div></article>
           <article class="panel"><span class="kicker">STRUCTURED SPEC</span><textarea id="mechanism-json" class="codebox" spellcheck="false"></textarea><div id="compile-result" class="result-box">尚未编译</div></article>
