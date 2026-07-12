@@ -8,6 +8,7 @@ from typing import Sequence
 from pc_mcmc_cigp.agent_backend.experiments import ExperimentDataValidator, ExperimentPlanner, write_experiment_template
 from pc_mcmc_cigp.agent_backend.models import MechanismSpec, ProjectStage, ReactionProjectSpec
 from pc_mcmc_cigp.agent_backend.services import AlgorithmService
+from pc_mcmc_cigp.agent_backend.cigp_service import CIGPService
 from pc_mcmc_cigp.agent_backend.store import ProjectStore
 
 
@@ -19,6 +20,7 @@ class ReactionAgentWorkflow:
         self.planner = ExperimentPlanner()
         self.validator = ExperimentDataValidator()
         self.algorithms = AlgorithmService()
+        self.cigp = CIGPService()
 
     def create_project(self, project: ReactionProjectSpec) -> Path:
         return self.store.create(project)
@@ -69,6 +71,34 @@ class ReactionAgentWorkflow:
         self.store.save_artifact(project.project_id, "mechanisms", asdict(approved))
         self.store.append_event(project.project_id, "mechanism_approved", {"mechanism_id": approved.mechanism_id})
         return approved
+
+    def run_mcmc(self, project, mechanism, normalized_rows, *, sources, targets, **config):
+        if project.stage != ProjectStage.WAITING_FOR_MECHANISM_APPROVAL:
+            raise ValueError("project is not ready to run PC-MCMC")
+        if not mechanism.approved:
+            raise PermissionError("mechanism requires explicit approval")
+        self.store.transition(project, ProjectStage.MCMC_RUNNING)
+        try:
+            summary = self.algorithms.run_pc_mcmc(mechanism, normalized_rows, sources=sources, targets=targets, **config)
+            self.store.save_artifact(project.project_id, "mcmc_runs", asdict(summary))
+            self.store.transition(project, ProjectStage.MCMC_REVIEW)
+            return summary
+        except Exception:
+            self.store.transition(project, ProjectStage.WAITING_FOR_MECHANISM_APPROVAL, "PC-MCMC run failed")
+            raise
+
+    def run_cigp(self, project, mcmc_summary, template_name, X, y, bounds, **config):
+        if project.stage != ProjectStage.MCMC_REVIEW:
+            raise ValueError("project is not ready to run CIGP")
+        self.store.transition(project, ProjectStage.CIGP_RUNNING)
+        try:
+            report = self.cigp.fit_and_recommend(mcmc_summary, template_name, X, y, bounds, **config)
+            self.store.save_artifact(project.project_id, "cigp_runs", asdict(report))
+            self.store.transition(project, ProjectStage.OPTIMIZATION_READY)
+            return report
+        except Exception:
+            self.store.transition(project, ProjectStage.MCMC_REVIEW, "CIGP run failed or was gated")
+            raise
 
 
 def load_runtime_config(path: str | Path) -> dict:

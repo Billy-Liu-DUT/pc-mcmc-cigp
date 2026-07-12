@@ -50,6 +50,18 @@ reports/
 
 正式前端开发前，应在这些读模型之上增加 FastAPI 或等价 HTTP 层，不要让浏览器直接访问算法对象。
 
+## 本地HTTP与可视化工作台
+
+当前已提供不依赖额外Web框架的本地服务：
+
+```powershell
+E:\Anaconda3\envs\bayesian\python.exe scripts\run_agent_web.py
+```
+
+浏览器访问 `http://127.0.0.1:8765`。页面包括项目定义、实验计划、CSV质控、候选机理、PC-MCMC诊断和CIGP优化。所有科研数据保存在本地 `projects/`，浏览器存储不作为数据源。
+
+HTTP层已经提供项目、实验、上传验证、机理注册/批准、PC-MCMC和CIGP端点。PC-MCMC当前为同步请求，只适合短链试运行；正式长链需要后续后台任务队列。
+
 ## OpenAI API 占位
 
 `config/agent_runtime.example.json` 默认：
@@ -64,6 +76,6 @@ reports/
 
 - OpenAI Responses API / Agents SDK；
 - 自然语言到 `ReactionProjectSpec` 和 `MechanismSpec` 的转换；
-- HTTP 服务和可视化网页；
+- 后台长任务的异步HTTP任务状态与实时进度；
 - 仪器厂商原始格式适配；
 - 后台任务队列与长时间 MCMC 进度推送。

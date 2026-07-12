@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIGP Reaction Workbench</title>
+  <meta name="description" content="从实验计划到PC-MCMC机理发现与CIGP优化的本地化学动力学工作台">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">∂</span><div><strong>CIGP</strong><small>Reaction Workbench</small></div></div>
+      <nav id="nav" aria-label="工作流导航">
+        <button class="nav-item active" data-page="project"><span>01</span>项目定义</button>
+        <button class="nav-item" data-page="experiments"><span>02</span>实验计划</button>
+        <button class="nav-item" data-page="quality"><span>03</span>数据质控</button>
+        <button class="nav-item" data-page="mechanism"><span>04</span>候选机理</button>
+        <button class="nav-item" data-page="mcmc"><span>05</span>PC-MCMC</button>
+        <button class="nav-item" data-page="cigp"><span>06</span>CIGP优化</button>
+      </nav>
+      <div class="api-state"><span class="dot"></span><div><b>本地模式</b><small id="api-label">OpenAI API 未配置</small></div></div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><p class="eyebrow">PHYSICS-CONSTRAINED KINETICS</p><h1 id="page-title">定义反应项目</h1></div>
+        <div class="stage-chip"><span>当前阶段</span><b id="stage">INTAKE</b></div>
+      </header>
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <section class="page active" id="page-project">
+        <div class="intro-grid">
+          <article class="hero-card">
+            <span class="kicker">从化学语言到可求解方程</span>
+            <h2>先描述目标，再让数据决定机理。</h2>
+            <p>工作台会把反应对象、实验变量和观测量转为结构化项目。LLM接口目前关闭，所有步骤由本地确定性后端执行。</p>
+            <div class="equation">dc/dt = S(z) · r(c, T, θ)</div>
+          </article>
+          <article class="status-card">
+            <h3>工作流完整度</h3>
+            <div class="metric"><b>4</b><span>已接通环节</span></div>
+            <div class="progress"><i style="width:66%"></i></div>
+            <p>项目、实验、数据、机理已可交互；长时间算法任务将在下一阶段接入。</p>
+          </article>
+        </div>
+        <form id="project-form" class="panel form-grid">
+          <div class="panel-heading"><div><span class="kicker">PROJECT SPEC</span><h2>反应项目</h2></div><span class="required-note">* 必填</span></div>
+          <label>项目编号 *<input name="project_id" value="demo_epoxidation" required pattern="[A-Za-z0-9_-]+"></label>
+          <label>项目标题 *<input name="title" value="环氧化动力学发现" required></label>
+          <label>目标 *<select name="objective"><option value="combined">机理发现 + 优化</option><option value="mechanism_discovery">仅机理发现</option><option value="yield_optimization">仅产率优化</option></select></label>
+          <label>反应物名称 *<input name="reactant" value="substrate" required></label>
+          <label>反应物分子式<input name="reactant_formula" value="C8H8" placeholder="例如 C8H8"></label>
+          <label>目标产物名称 *<input name="product" value="product" required></label>
+          <label>产物分子式<input name="product_formula" value="C8H8" placeholder="例如 C8H8O"></label>
+          <label class="wide">自然语言目标<textarea name="request" rows="3">研究目标产物形成和后续损失的动力学机理，并优化最终产率。</textarea></label>
+          <div class="actions wide"><button class="primary" type="submit">创建本地项目</button><span id="project-result" class="muted">尚未创建</span></div>
+        </form>
+      </section>
+
+      <section class="page" id="page-experiments">
+        <div class="section-lead"><div><span class="kicker">EXPERIMENT DESIGN</span><h2>获得可辨识的动力学数据</h2></div><button id="plan-btn" class="primary">生成实验计划</button></div>
+        <div class="stats-row"><article><b id="experiment-count">0</b><span>实验条件</span></article><article><b id="time-count">0</b><span>采样时间点</span></article><article><b>2×</b><span>默认平行实验</span></article></div>
+        <div class="panel"><div class="panel-heading"><div><span class="kicker">REQUEST MATRIX</span><h2>建议实验</h2></div></div><div class="table-wrap"><table><thead><tr><th>编号</th><th>目的</th><th>温度/K</th><th>时间点</th><th>理由</th></tr></thead><tbody id="experiment-table"><tr><td colspan="5" class="empty">创建项目后生成实验计划</td></tr></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="page-quality">
+        <div class="section-lead"><div><span class="kicker">DATA GATE</span><h2>上传并验证实验数据</h2></div></div>
+        <div class="upload-zone panel"><input type="file" id="csv-file" accept=".csv"><label for="csv-file"><b>选择CSV数据文件</b><span>浏览器只读取文件文本，并发送给本地服务</span></label><button id="validate-btn" class="primary">开始验证</button></div>
+        <div class="quality-grid">
+          <article class="panel"><span class="kicker">VALIDATION</span><h3 id="validation-state">等待数据</h3><ul id="validation-list" class="check-list"><li>必需列与数值范围</li><li>时间顺序和零时刻</li><li>物种覆盖与可辨识性</li></ul></article>
+          <article class="panel"><span class="kicker">IDENTIFIABILITY</span><h3>风险提示</h3><div id="risk-list" class="risk-list"><p class="empty">验证后显示</p></div></article>
+        </div>
+      </section>
+
+      <section class="page" id="page-mechanism">
+        <div class="section-lead"><div><span class="kicker">MECHANISM COMPILER</span><h2>候选基元反应</h2></div><button id="compile-btn" class="primary">编译机理</button></div>
+        <div class="mechanism-layout">
+          <article class="panel graph-panel"><div class="species-node source" id="node-a">A</div><div class="reaction-arrow"><span>k₁</span><i></i></div><div class="species-node intermediate">I</div><div class="reaction-arrow"><span>k₂</span><i></i></div><div class="species-node product" id="node-p">P</div><div class="graph-caption">可视化仅展示结构；最终是否存在由PC-MCMC后验决定</div></article>
+          <article class="panel"><span class="kicker">STRUCTURED SPEC</span><textarea id="mechanism-json" class="codebox" spellcheck="false"></textarea><div id="compile-result" class="result-box">尚未编译</div></article>
+        </div>
+      </section>
+
+      <section class="page" id="page-mcmc">
+        <div class="section-lead"><div><span class="kicker">POSTERIOR SEARCH</span><h2>PC-MCMC诊断</h2></div><button id="mcmc-btn" class="primary">批准机理并试运行</button></div>
+        <div class="diagnostic-grid"><article class="panel"><span>反应PIP</span><div id="pip-chart" class="placeholder-chart"><i style="height:0"></i><i style="height:0"></i></div><small id="pip-label">等待真实计算</small></article><article class="panel diag-list"><div><span>R-hat max</span><b id="rhat">—</b></div><div><span>ESS min</span><b id="ess">—</b></div><div><span>MAP RMSE</span><b id="rmse">—</b></div><div><span>路径数量</span><b id="path-count">—</b></div></article><article class="panel gate-card"><span class="gate-icon">!</span><h3 id="mcmc-state">尚未运行</h3><p id="mcmc-message">需要有效数据、已编译机理和人工批准后才能启动。</p></article></div>
+      </section>
+
+      <section class="page" id="page-cigp">
+        <div class="section-lead"><div><span class="kicker">ACTIVE OPTIMIZATION</span><h2>CIGP实验推荐</h2></div><button class="disabled-button" disabled>等待收敛机理</button></div>
+        <div class="optimization-grid"><article class="panel recommendation"><span class="kicker">NEXT EXPERIMENT</span><h3>尚无推荐条件</h3><p>只有PC-MCMC通过收敛门控后，系统才会选择兼容模板并给出下一批实验。</p><div class="condition-grid"><span>温度<b>—</b></span><span>时间<b>—</b></span><span>配比<b>—</b></span><span>不确定度<b>—</b></span></div></article><article class="panel"><span class="kicker">TEMPLATE LIBRARY</span><div id="template-list" class="template-list"><p class="empty">正在读取模板...</p></div></article></div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

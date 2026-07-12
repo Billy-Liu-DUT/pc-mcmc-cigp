@@ -125,6 +125,15 @@ python examples/agent_backend_workflow.py
 ```
 
 See `docs/AGENT_BACKEND_ZH.md` for the workflow and explicit unfinished items.
+
+Start the local visual workbench without an API key or web-framework install:
+
+```bash
+python scripts/run_agent_web.py
+```
+
+Then open `http://127.0.0.1:8765`. The browser communicates only with the local
+project store and deterministic algorithm services; OpenAI integration remains disabled.
 - `examples/`: runnable scripts for paper-style experiments and baselines.
 
 Chinese documentation:
