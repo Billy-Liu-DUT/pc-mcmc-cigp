@@ -1,0 +1,6 @@
+{
+  "api_enabled": false,
+  "openai_model": null,
+  "openai_api_key_env": "OPENAI_API_KEY",
+  "project_root": "projects"
+}

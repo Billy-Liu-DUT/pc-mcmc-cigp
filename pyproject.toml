@@ -31,6 +31,8 @@ classifiers = [
 cigp = ["GPy>=1.13"]
 benchmarks = ["pysindy>=1.7", "seaborn>=0.13", "scipy>=1.10"]
 dev = ["pytest>=8", "ruff>=0.5"]
+agent = ["openai-agents"]
+web = ["fastapi", "uvicorn"]
 
 [tool.setuptools.packages.find]
 include = ["pc_mcmc_cigp*"]

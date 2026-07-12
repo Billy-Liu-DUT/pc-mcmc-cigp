@@ -15,6 +15,7 @@ def run_multiple_chains(
     dataset: Sequence[dict],
     config: MCMCConfig | None = None,
     n_chains: int = 4,
+    candidate_pathways: Sequence[Sequence[int]] | None = None,
 ) -> DiscoveryResult:
     """Run independent MCMC chains and merge posterior inclusion probabilities."""
 
@@ -29,7 +30,7 @@ def run_multiple_chains(
     for chain_idx in range(n_chains):
         chain_config = replace(base_config, random_state=base_seed + chain_idx)
         sampler = SpikeAndSlabSampler(engine, chain_config)
-        results.append(sampler.fit(dataset))
+        results.append(sampler.fit(dataset, candidate_pathways=candidate_pathways))
         z_chains.append(sampler.chain_z_array)
         theta_chains.append(sampler.chain_theta_array)
 
@@ -56,7 +57,21 @@ def run_multiple_chains(
         "map_log_posterior": float(best_result.diagnostics["map_log_posterior"]),
         "rhat_max": float(np.nanmax(rhat)),
         "ess_min": float(np.nanmin(ess)),
+        "map_rmse": float(best_result.diagnostics.get("map_rmse", np.nan)),
+        "invalid_evaluations": int(sum(r.diagnostics.get("invalid_evaluations", 0) for r in results)),
+        "n_candidate_pathways": len(candidate_pathways or []),
     }
+    selected_pathways = None
+    pathway_pip = np.empty(0, dtype=float)
+    if candidate_pathways:
+        pathway_pip = np.asarray([
+            np.mean(np.prod(z_stack[:, :, np.asarray(path, dtype=int)], axis=2))
+            for path in candidate_pathways
+        ])
+        selected_pathways = [
+            tuple(path) for path, probability in zip(candidate_pathways, pathway_pip)
+            if probability >= base_config.selection_threshold
+        ]
     return DiscoveryResult(
         posterior_inclusion_probabilities=pip,
         mean_parameters=mean_parameters,
@@ -64,7 +79,12 @@ def run_multiple_chains(
         diagnostics=diagnostics,
         map_structure=best_result.map_structure,
         map_parameters=best_result.map_parameters,
-        chain_diagnostics={"rhat": rhat, "ess": ess},
+        chain_diagnostics={
+            "rhat": rhat, "ess": ess, "pathway_pip": pathway_pip,
+            "parameter_q05": np.quantile(theta_stack, 0.05, axis=(0, 1)),
+            "parameter_q95": np.quantile(theta_stack, 0.95, axis=(0, 1)),
+        },
+        selected_pathways=selected_pathways,
     )
 
 

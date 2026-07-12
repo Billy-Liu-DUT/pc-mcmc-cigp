@@ -110,6 +110,21 @@ PC-MCMC laws include `MassActionRate`, `PowerLawRate`, `ArrheniusRate`,
 source-to-product routes and the sampler accepts those routes as group proposals.
 
 Run `python examples/kinetic_template_gallery.py` for representative CIGP fits.
+
+## Agent-ready deterministic backend
+
+`pc_mcmc_cigp.agent_backend` provides the API-independent foundation for a
+future natural-language reaction agent: project state, experiment requests,
+CSV validation, mechanism compilation, approval-gated PC-MCMC, CIGP template
+screening, versioned artifacts, audit events, and frontend JSON read models.
+
+No OpenAI API key is required. Run:
+
+```bash
+python examples/agent_backend_workflow.py
+```
+
+See `docs/AGENT_BACKEND_ZH.md` for the workflow and explicit unfinished items.
 - `examples/`: runnable scripts for paper-style experiments and baselines.
 
 Chinese documentation:
