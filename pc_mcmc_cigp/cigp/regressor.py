@@ -29,11 +29,20 @@ class CIGPRegressor:
     def fit(self, X: np.ndarray, y: np.ndarray) -> "CIGPRegressor":
         self.X_train_ = np.asarray(X, dtype=float)
         self.y_train_ = np.asarray(y, dtype=float).reshape(-1, 1)
+        if self.X_train_.ndim != 2 or len(self.X_train_) != len(self.y_train_):
+            raise ValueError("X must be two-dimensional and contain the same number of rows as y")
+        if len(self.X_train_) == 0 or not np.all(np.isfinite(self.X_train_)) or not np.all(np.isfinite(self.y_train_)):
+            raise ValueError("training data must be non-empty and finite")
         self.y_mean_ = float(np.mean(self.y_train_))
         self.y_std_ = float(np.std(self.y_train_)) or 1.0
         self.y_norm_ = (self.y_train_ - self.y_mean_) / self.y_std_
 
         w0 = np.asarray(getattr(self.physics_model, "W", np.zeros(0)), dtype=float)
+        if hasattr(self.physics_model, "validate_parameters"):
+            self.physics_model.validate_parameters(w0)
+        probe = np.asarray(self.physics_model.compute_mean(self.X_train_, w0), dtype=float)
+        if probe.shape not in {(len(self.X_train_),), (len(self.X_train_), 1)} or not np.all(np.isfinite(probe)):
+            raise ValueError("physics model must return one finite prediction per input row")
         theta0 = np.log(
             [
                 self.config.kernel_variance,
@@ -74,6 +83,10 @@ class CIGPRegressor:
     def _negative_log_likelihood(self, params: np.ndarray) -> float:
         n_w = len(np.asarray(getattr(self.physics_model, "W", np.zeros(0)), dtype=float))
         w = params[:n_w]
+        if hasattr(self.physics_model, "parameter_bounds"):
+            bounds = np.asarray(self.physics_model.parameter_bounds, dtype=float)
+            if np.any(w < bounds[:, 0]) or np.any(w > bounds[:, 1]):
+                return 1e50
         kernel_variance, lengthscale, noise_variance = np.exp(params[n_w : n_w + 3])
         if not (
             self.config.kernel_variance_bounds[0] <= kernel_variance <= self.config.kernel_variance_bounds[1]

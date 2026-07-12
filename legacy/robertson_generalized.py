@@ -3,10 +3,15 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from base_physics import BasePhysicsModel
 import config_robertson as cfg
+import warnings
 
 
 class RobertsonGeneralized(BasePhysicsModel):
     def __init__(self, mode='variable', scale_factor=1.0, w_init=None):
+        warnings.warn(
+            "RobertsonGeneralized is deprecated; use pc_mcmc_cigp.kinetics.RobertsonKinetics",
+            DeprecationWarning, stacklevel=2,
+        )
         self.mode = mode
 
         # [FIX 1] 补回缺失的 scale_factor 定义，解决 AttributeError

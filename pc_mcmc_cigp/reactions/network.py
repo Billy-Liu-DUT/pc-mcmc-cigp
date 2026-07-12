@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from itertools import combinations_with_replacement
-from typing import Iterable, Sequence
+from typing import TYPE_CHECKING, Iterable, Sequence
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from pc_mcmc_cigp.kinetics import RateLaw
 
 
 @dataclass(frozen=True)
@@ -24,6 +27,7 @@ class Reaction:
 
     reactants: tuple[Species, ...] | list[Species]
     products: tuple[Species, ...] | list[Species]
+    rate_law: "RateLaw | None" = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "reactants", tuple(self.reactants))

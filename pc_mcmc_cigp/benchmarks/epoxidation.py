@@ -4,23 +4,19 @@ import numpy as np
 
 from pc_mcmc_cigp.acquisition import AcquisitionFactory
 from pc_mcmc_cigp.cigp import CIGPConfig, CIGPRegressor
+from pc_mcmc_cigp.kinetics import EpoxidationKinetics
 
 R_GAS = 8.314
 
 
-class EpoxyPhysics:
+class EpoxyPhysics(EpoxidationKinetics):
     param_names = ["log10_A_1", "log10_Ea_1", "log10_A_2", "log10_Ea_2"]
 
     def __init__(self):
-        self.W = np.array([6.0, 4.7, 10.0, 4.9], dtype=float)
+        super().__init__()
 
     def compute_mean(self, X: np.ndarray, W: np.ndarray) -> np.ndarray:
-        out = []
-        for styrene, paa, temperature, time_s in np.asarray(X, dtype=float):
-            k1 = 10 ** W[0] * np.exp(-(10 ** W[1]) / (R_GAS * temperature))
-            k2 = 10 ** W[2] * np.exp(-(10 ** W[3]) / (R_GAS * temperature))
-            out.append(_simulate_epoxy(styrene, paa, temperature, time_s, k1, k2))
-        return np.asarray(out).reshape(-1, 1)
+        return super().compute_mean(X, W)
 
     def compute_gradients_W(self, X: np.ndarray, W: np.ndarray) -> np.ndarray:
         eps = 1e-4

@@ -10,6 +10,7 @@ except ImportError:  # pragma: no cover - exercised in minimal environments
     solve_ivp = None
 
 from pc_mcmc_cigp.reactions import Reaction, Species
+from pc_mcmc_cigp.kinetics import MassActionRate, RateLaw
 
 
 class MechanismEngine:
@@ -35,6 +36,22 @@ class MechanismEngine:
         ) if self.reactions else np.zeros((self.n_species, 0))
         self.rate_patterns = [self._rate_pattern(reaction) for reaction in self.reactions]
         self.reverse_map = self._detect_reversible_pairs()
+        self.rate_laws: list[RateLaw] = []
+        self.parameter_slices: list[slice] = []
+        offset = 0
+        for reaction, pattern in zip(self.reactions, self.rate_patterns):
+            law = reaction.rate_law or MassActionRate(dict(pattern))
+            self.rate_laws.append(law)
+            width = len(law.parameter_names)
+            self.parameter_slices.append(slice(offset, offset + width))
+            offset += width
+        self.n_rate_parameters = offset
+        self.rate_parameter_names = tuple(
+            f"r{i}_{name}" for i, law in enumerate(self.rate_laws) for name in law.parameter_names
+        )
+        self.rate_parameter_bounds = np.asarray(
+            [bound for law in self.rate_laws for bound in law.parameter_bounds], dtype=float
+        ) if self.rate_laws else np.empty((0, 2))
 
     def calculate_isothermal_rates(self, mu_map: dict[str, float], ln_k_forward: Sequence[float]) -> np.ndarray:
         """Convert chemical potentials and forward log rates into detailed-balance rates."""
@@ -65,15 +82,28 @@ class MechanismEngine:
         method: str = "LSODA",
         rtol: float = 1e-6,
         atol: float = 1e-9,
+        temperature: float | None = None,
+        context: dict[str, float] | None = None,
     ) -> np.ndarray:
         t_eval = np.asarray(t_eval, dtype=float)
         y0 = np.asarray(y0, dtype=float)
         k_arr = np.asarray(k_vector, dtype=float)
         z_arr = np.asarray(z_structure, dtype=float)
+        if len(k_arr) not in {self.n_reactions, self.n_rate_parameters}:
+            raise ValueError(f"expected {self.n_rate_parameters} rate parameters, got {len(k_arr)}")
+        simulation_context = dict(context or {})
+        if temperature is not None:
+            simulation_context["temperature"] = float(temperature)
+        def needs_temperature(law):
+            if type(law).__name__ == "ArrheniusRate":
+                return True
+            return any(needs_temperature(getattr(law, name)) for name in ("forward", "reverse") if hasattr(law, name))
+        if any(needs_temperature(law) for law in self.rate_laws) and "temperature" not in simulation_context:
+            raise ValueError("Arrhenius rate laws require a temperature")
         if self.solver_backend in {"auto", "scipy"} and solve_ivp is not None:
             try:
                 solution = solve_ivp(
-                    lambda t, y: self._ode(t, y, k_arr, z_arr),
+                    lambda t, y: self._ode(t, y, k_arr, z_arr, simulation_context),
                     (float(t_eval[0]), float(t_eval[-1])),
                     y0,
                     t_eval=t_eval,
@@ -90,27 +120,29 @@ class MechanismEngine:
                 if self.solver_backend == "scipy":
                     raise
         self.last_solver_backend = "rk4"
-        return self._integrate_rk4(k_arr, z_arr, y0, t_eval)
+        return self._integrate_rk4(k_arr, z_arr, y0, t_eval, simulation_context)
 
     def calculate_loss(self, k_vector: Sequence[float], z_structure: Sequence[float], dataset: Sequence[dict]) -> float:
         total = 0.0
         for experiment in dataset:
-            pred = self.simulate(k_vector, z_structure, experiment["y0_full"], experiment["t"])
+            pred = self.simulate(
+                k_vector, z_structure, experiment["y0_full"], experiment["t"],
+                temperature=experiment.get("temperature"), context=experiment.get("conditions"),
+            )
             obs_indices = experiment.get("obs_indices", list(range(self.n_species)))
             residual = pred[np.asarray(obs_indices), :] - np.asarray(experiment["data_matrix"], dtype=float)
             total += float(np.sum(residual**2))
         return total
 
-    def _ode(self, _t: float, y: np.ndarray, k_vector: np.ndarray, z_structure: np.ndarray) -> np.ndarray:
+    def _ode(self, _t: float, y: np.ndarray, k_vector: np.ndarray, z_structure: np.ndarray, context=None) -> np.ndarray:
         concentrations = np.maximum(y, 0.0)
         rates = np.zeros(self.n_reactions, dtype=float)
-        for j, pattern in enumerate(self.rate_patterns):
+        legacy_layout = len(k_vector) == self.n_reactions and self.n_rate_parameters != self.n_reactions
+        for j, law in enumerate(self.rate_laws):
             if z_structure[j] < 0.5:
                 continue
-            value = k_vector[j]
-            for species_idx, power in pattern:
-                value *= concentrations[species_idx] ** power
-            rates[j] = value
+            params = np.asarray([k_vector[j]]) if legacy_layout else k_vector[self.parameter_slices[j]]
+            rates[j] = law.rate(concentrations, params, context)
         return self.S @ rates
 
     def _integrate_rk4(
@@ -119,6 +151,7 @@ class MechanismEngine:
         z_structure: np.ndarray,
         y0: np.ndarray,
         t_eval: np.ndarray,
+        context: dict[str, float] | None = None,
     ) -> np.ndarray:
         y = np.zeros((self.n_species, len(t_eval)), dtype=float)
         y[:, 0] = np.maximum(y0, 0.0)
@@ -126,10 +159,10 @@ class MechanismEngine:
             t0 = float(t_eval[i - 1])
             dt = float(t_eval[i] - t_eval[i - 1])
             state = y[:, i - 1]
-            k1 = self._ode(t0, state, k_vector, z_structure)
-            k2 = self._ode(t0 + dt / 2, state + dt * k1 / 2, k_vector, z_structure)
-            k3 = self._ode(t0 + dt / 2, state + dt * k2 / 2, k_vector, z_structure)
-            k4 = self._ode(t0 + dt, state + dt * k3, k_vector, z_structure)
+            k1 = self._ode(t0, state, k_vector, z_structure, context)
+            k2 = self._ode(t0 + dt / 2, state + dt * k1 / 2, k_vector, z_structure, context)
+            k3 = self._ode(t0 + dt / 2, state + dt * k2 / 2, k_vector, z_structure, context)
+            k4 = self._ode(t0 + dt, state + dt * k3, k_vector, z_structure, context)
             y[:, i] = np.maximum(state + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6, 0.0)
         return y
 

@@ -3,6 +3,7 @@
 from pc_mcmc_cigp.cigp import CIGPConfig, CIGPRegressor
 from pc_mcmc_cigp.discovery import DiscoveryResult, MCMCConfig, MechanismEngine, SpikeAndSlabSampler
 from pc_mcmc_cigp.reactions import AtomMappedNetworkGenerator, Reaction, Species
+from pc_mcmc_cigp.kinetics import create_kinetic_template, list_kinetic_templates
 
 __version__ = "0.1.0"
 
@@ -14,6 +15,8 @@ __all__ = [
     "MCMCConfig",
     "MechanismEngine",
     "Reaction",
+    "create_kinetic_template",
+    "list_kinetic_templates",
     "Species",
     "SpikeAndSlabSampler",
     "__version__",

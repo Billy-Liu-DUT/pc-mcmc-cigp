@@ -85,6 +85,31 @@ print([r.equation_str for r in result.selected_reactions])
 - `pc_mcmc_cigp.cigp`: sklearn-style CIGP regressor.
 - `pc_mcmc_cigp.acquisition`: EI, GWU, discrepancy hunter, and physically constrained EI.
 - `pc_mcmc_cigp.benchmarks`: HBr mechanism discovery and styrene epoxidation examples.
+- `pc_mcmc_cigp.kinetics`: reusable kinetic priors and rate laws shared by CIGP and PC-MCMC.
+
+## Kinetic template library
+
+The public template registry covers elementary Arrhenius, series, parallel,
+reversible, autocatalytic, epoxidation, Robertson, Michaelis--Menten,
+Langmuir--Hinshelwood, generalized power-law, inhibited/saturating, and radical
+chain kinetics. Templates use physical inputs and expose parameter names, bounds,
+units, full final-state diagnostics, and finite-difference sensitivities:
+
+```python
+from pc_mcmc_cigp.kinetics import TemplateRegistry, create_kinetic_template
+
+print(TemplateRegistry.names())
+physics = create_kinetic_template("reversible_arrhenius")
+print(TemplateRegistry.describe("reversible_arrhenius"))
+```
+
+Organic mechanisms should be represented by composing elementary reaction steps
+and rate laws instead of adding a hard-coded class per named reaction. Supported
+PC-MCMC laws include `MassActionRate`, `PowerLawRate`, `ArrheniusRate`,
+`ReversibleRate`, and `SaturationRate`. `PathwayGenerator` enumerates bounded
+source-to-product routes and the sampler accepts those routes as group proposals.
+
+Run `python examples/kinetic_template_gallery.py` for representative CIGP fits.
 - `examples/`: runnable scripts for paper-style experiments and baselines.
 
 Chinese documentation:

@@ -110,6 +110,33 @@ print(result.diagnostics["ess_min"])
 
 ## `pc_mcmc_cigp.cigp`
 
+## `pc_mcmc_cigp.kinetics`
+
+动力学公共库通过 `create_kinetic_template(name)` 创建模板，通过
+`TemplateRegistry.describe(name)` 查询输入列、物种和参数边界。目前包括：
+
+| 模板 | 主要用途 | 输入 |
+|---|---|---|
+| `simple_arrhenius` | 单步双分子反应 | A0, B0, T, t |
+| `series_arrhenius` | 连续反应与中间体 | A0, B0, T, t |
+| `parallel_arrhenius` | 主副反应竞争 | A0, B0, T, t |
+| `reversible_arrhenius` | 可逆反应 | A0, B0, T, t |
+| `autocatalytic_arrhenius` | 自催化诱导行为 | A0, P0, T, t |
+| `epoxidation` | 环氧化与后续损失 | substrate0, oxidant0, T, t |
+| `robertson` | 刚性多时间尺度反应 | A0, B0, C0, t |
+| `michaelis_menten` | 饱和酶/催化动力学 | S0, catalyst0, T, t |
+| `langmuir_hinshelwood` | 双吸附表面反应 | A0, B0, T, t |
+| `power_law` | 经验反应级数 | A0, B0, T, t |
+| `inhibited` | 竞争抑制或催化剂抑制 | S0, I0, catalyst, t |
+| `radical_chain` | 引发、传播与终止 | substrate0, initiator0, T, t |
+
+这些模板是可组合基础族，不代表穷尽所有命名有机反应。复杂机理应拆成基元步骤，
+给每个 `Reaction` 指定质量作用、幂律、Arrhenius、可逆或饱和速率律。
+
+`PathwayGenerator.generate(sources, targets, max_steps)` 从候选反应网枚举最短路径；
+将其反应索引传给 `SpikeAndSlabSampler.fit(..., candidate_pathways=...)` 后，采样器会混合
+单反应翻转和整条路径翻转，并在 `DiscoveryResult.selected_pathways` 返回后验入选路径。
+
 ### `CIGPRegressor`
 
 sklearn 风格 CIGP 回归器。
