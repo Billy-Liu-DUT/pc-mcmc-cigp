@@ -135,6 +135,11 @@ python scripts/run_agent_web.py
 Then open `http://127.0.0.1:8765`. The browser communicates only with the local
 project store and deterministic algorithm services; OpenAI integration remains disabled.
 
+When an LLM provider is configured, the default page is a persistent local
+conversation that clarifies the reaction request, creates a reviewable project
+draft, and then hands control to the deterministic experiment/mechanism/MCMC/CIGP
+workflow. Conversation text is stored server-side under the local project root.
+
 For an optional OpenAI-compatible LLM provider, set `OPENAI_API_KEY`,
 `OPENAI_BASE_URL`, and `OPENAI_MODEL` in the server process. Validate the
 provider first with `python scripts/probe_llm_api.py`; credentials are never

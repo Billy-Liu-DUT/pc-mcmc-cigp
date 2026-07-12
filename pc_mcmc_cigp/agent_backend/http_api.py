@@ -14,6 +14,7 @@ from pc_mcmc_cigp.agent_backend.frontend import FrontendReadModel, api_placehold
 from pc_mcmc_cigp.agent_backend.workflow import ReactionAgentWorkflow
 from pc_mcmc_cigp.agent_backend.models import MCMCSummary
 from pc_mcmc_cigp.agent_backend.llm_client import CompatibleResponsesClient, LLMConfigurationError, LLMRequestError, client_status
+from pc_mcmc_cigp.agent_backend.chat import ConversationService
 
 
 class ReactionAPI:
@@ -21,6 +22,7 @@ class ReactionAPI:
         self.workflow = ReactionAgentWorkflow(project_root)
         self.frontend = FrontendReadModel(self.workflow.store)
         self.static_root = Path(static_root).resolve()
+        self.conversation = ConversationService(project_root)
 
     def dispatch(self, method: str, path: str, payload: dict | None = None) -> tuple[int, dict | bytes, str]:
         payload = payload or {}; parts = [item for item in path.strip("/").split("/") if item]
@@ -36,6 +38,11 @@ class ReactionAPI:
         if path == "/api/llm/propose-mechanism" and method == "POST":
             mechanism=CompatibleResponsesClient.from_env().propose_mechanism(payload["project"],payload.get("dataset_summary"))
             return 200,{"mechanism":asdict(mechanism),"graph":self.frontend.mechanism_graph(mechanism)},"application/json"
+        if path == "/api/chat" and method == "POST":
+            result=self.conversation.send(payload["message"],payload.get("session_id"),payload.get("project_context"))
+            return 200,result,"application/json"
+        if len(parts)==3 and parts[:2]==["api","chat"] and method=="GET":
+            return 200,{"session_id":parts[2],"messages":self.conversation.store.read(parts[2])},"application/json"
         if path == "/api/projects" and method == "POST":
             project = project_from_dict(payload); self.workflow.create_project(project)
             return 201, {"project": project.to_dict(), "dashboard": asdict(self.frontend.dashboard(project.project_id))}, "application/json"

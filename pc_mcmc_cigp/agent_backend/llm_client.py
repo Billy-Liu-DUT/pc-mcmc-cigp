@@ -51,6 +51,27 @@ class CompatibleResponsesClient:
         payload=self._json_response("Propose testable kinetic hypotheses. Return valid JSON only.",prompt); payload["project_id"]=project_payload["project_id"]; payload["approved"]=False
         return mechanism_from_dict(payload)
 
+    def chat(self, messages: list[dict], project_context: dict | None = None) -> dict:
+        history = messages[-20:]
+        prompt = f"""Continue a reaction-kinetics project conversation in Chinese.
+Return one JSON object with keys: reply, intent, missing_information, suggested_actions, project_draft.
+intent must be one of clarify, project_draft, experiment_plan, data_review, mechanism_review,
+mcmc_review, cigp_review, general. project_draft is null unless enough information exists; when present
+it follows the ReactionProjectSpec fields. Clearly distinguish known facts from hypotheses. Do not claim
+that an algorithm ran. Never bypass data validation or mechanism approval.
+Current project context: {json.dumps(project_context or {},ensure_ascii=False)}
+Conversation: {json.dumps(history,ensure_ascii=False)}"""
+        payload = self._json_response(
+            "You are the conversational coordinator for a physics-constrained reaction kinetics workflow. Return valid JSON only.",
+            prompt,
+        )
+        payload.setdefault("reply", "")
+        payload.setdefault("intent", "general")
+        payload.setdefault("missing_information", [])
+        payload.setdefault("suggested_actions", [])
+        payload.setdefault("project_draft", None)
+        return payload
+
     def _json_response(self,instructions,prompt):
         with _PROVIDER_SEMAPHORE:
             body=self.transport(f"{self.config.base_url}/responses",self.config.api_key,{"model":self.config.model,"instructions":instructions,"input":prompt,"max_output_tokens":4096})

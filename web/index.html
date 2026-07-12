@@ -12,7 +12,8 @@
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">∂</span><div><strong>CIGP</strong><small>Reaction Workbench</small></div></div>
       <nav id="nav" aria-label="工作流导航">
-        <button class="nav-item active" data-page="project"><span>01</span>项目定义</button>
+        <button class="nav-item active" data-page="chat"><span>00</span>Agent 对话</button>
+        <button class="nav-item" data-page="project"><span>01</span>项目定义</button>
         <button class="nav-item" data-page="experiments"><span>02</span>实验计划</button>
         <button class="nav-item" data-page="quality"><span>03</span>数据质控</button>
         <button class="nav-item" data-page="mechanism"><span>04</span>候选机理</button>
@@ -24,12 +25,30 @@
 
     <main>
       <header class="topbar">
-        <div><p class="eyebrow">PHYSICS-CONSTRAINED KINETICS</p><h1 id="page-title">定义反应项目</h1></div>
+        <div><p class="eyebrow">PHYSICS-CONSTRAINED KINETICS</p><h1 id="page-title">与动力学 Agent 对话</h1></div>
         <div class="stage-chip"><span>当前阶段</span><b id="stage">INTAKE</b></div>
       </header>
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
-      <section class="page active" id="page-project">
+      <section class="page active" id="page-chat">
+        <div class="chat-layout">
+          <article class="chat-card">
+            <div class="chat-header"><div><span class="kicker">REACTION AGENT</span><h2>先说你想研究什么反应</h2></div><span class="serial-badge">LLM并发 1</span></div>
+            <div id="chat-messages" class="chat-messages" aria-live="polite">
+              <div class="message assistant"><span>Agent</span><p>请描述底物、目标产物和研究目标。我会先确认缺失信息，再生成实验数据需求；不会直接假定机理已经成立。</p></div>
+            </div>
+            <div id="draft-card" class="draft-card hidden"><div><b>已形成项目草案</b><small id="draft-summary"></small></div><button id="apply-draft-btn" class="secondary">检查并应用到项目</button></div>
+            <form id="chat-form" class="chat-input"><textarea id="chat-input" rows="3" placeholder="例如：我想研究苯乙烯环氧化，判断产物是否继续分解，并优化温度和反应时间。" required></textarea><button class="primary" type="submit">发送</button></form>
+          </article>
+          <aside class="conversation-guide">
+            <span class="kicker">HOW IT WORKS</span><h3>对话不会跳过科学门控</h3>
+            <ol><li><b>明确反应</b><span>底物、产物、催化剂与目标</span></li><li><b>规划数据</b><span>时间序列、温度与重复实验</span></li><li><b>提出候选</b><span>只生成可检验的机理假设</span></li><li><b>数学求解</b><span>守恒编译、PC-MCMC、CIGP</span></li></ol>
+            <div class="privacy-note"><b>本地保存</b><p>对话记录和实验项目保存在本机。只有发送的对话上下文会传给已配置的模型接口。</p></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page" id="page-project">
         <div class="intro-grid">
           <article class="hero-card">
             <span class="kicker">从化学语言到可求解方程</span>

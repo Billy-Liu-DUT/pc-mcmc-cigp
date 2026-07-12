@@ -51,3 +51,18 @@ def test_http_cigp_route_respects_project_stage_and_returns_recommendation():
         payload={"mcmc_summary":mcmc,"template_name":"simple_arrhenius","X":X,"y":y,"bounds":{"A0":[.8,1.2],"B0":[.8,1.2],"temperature":[310,370],"time":[.005,.05]},"config":{"n_candidates":16}}
         status,result,_=api.dispatch("POST","/api/projects/web-demo/cigp/run",payload)
         assert status==200 and result["report"]["recommendation"]
+
+
+def test_http_chat_route_returns_session_and_persisted_history():
+    with TemporaryDirectory() as tmp:
+        static=Path(tmp)/"static"; static.mkdir(); (static/"index.html").write_text("ok",encoding="utf-8")
+        api=ReactionAPI(Path(tmp)/"projects",static)
+        class FakeConversation:
+            def __init__(self): self.store=self
+            def send(self,message,session_id,project_context): return {"session_id":"chat_demo","reply":"请提供温度范围","intent":"clarify","missing_information":["temperature"],"suggested_actions":[],"project_draft":None}
+            def read(self,session_id): return [{"role":"assistant","content":"请提供温度范围","metadata":{"intent":"clarify"}}]
+        api.conversation=FakeConversation()
+        status,result,_=api.dispatch("POST","/api/chat",{"message":"研究A到P"})
+        assert status==200 and result["session_id"]=="chat_demo"
+        status,result,_=api.dispatch("GET","/api/chat/chat_demo")
+        assert status==200 and result["messages"][0]["role"]=="assistant"
