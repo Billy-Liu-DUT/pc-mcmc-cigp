@@ -78,6 +78,9 @@ def main() -> int:
     if not key or not base:
         print("Set OPENAI_API_KEY and OPENAI_BASE_URL in the current shell. Nothing was sent.")
         return 2
+    if len(key) < 20 or not key.startswith("sk-") or not all(character.isprintable() for character in key):
+        print("Configured API key is malformed. Run scripts/configure_llm.py --from-clipboard. Nothing was sent.")
+        return 2
 
     print(f"Testing configured endpoint with model={model!r}; credentials will not be printed.")
     status, body = request_json(f"{base}/models", key)

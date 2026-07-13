@@ -32,6 +32,8 @@ class LLMProviderConfig:
         load_local_env()
         key=os.environ.get("OPENAI_API_KEY","").strip(); base=os.environ.get("OPENAI_BASE_URL","").strip().rstrip("/"); model=os.environ.get("OPENAI_MODEL","").strip()
         if not key or not base or not model: raise LLMConfigurationError("OPENAI_API_KEY, OPENAI_BASE_URL and OPENAI_MODEL must all be set")
+        if len(key) < 20 or not key.startswith("sk-") or not all(character.isprintable() for character in key):
+            raise LLMConfigurationError("OPENAI_API_KEY is malformed; rerun scripts/configure_llm.py --from-clipboard")
         if not base.startswith("https://"): raise LLMConfigurationError("OPENAI_BASE_URL must use HTTPS")
         return cls(base,model,key)
 
