@@ -37,6 +37,9 @@ web = ["fastapi", "uvicorn"]
 [tool.setuptools.packages.find]
 include = ["pc_mcmc_cigp*"]
 
+[tool.setuptools.package-data]
+"pc_mcmc_cigp.agent_backend.skills" = ["prompts/*.md", "schemas/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

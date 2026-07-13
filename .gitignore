@@ -15,3 +15,6 @@ examples/outputs/*
 *.pkl
 *.bak
 .idea/
+projects/
+work/test-tmp/
+.env.local

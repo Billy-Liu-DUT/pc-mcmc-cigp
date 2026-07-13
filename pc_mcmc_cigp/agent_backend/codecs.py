@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from pc_mcmc_cigp.agent_backend.models import (
     ChemicalSpeciesSpec, ElementaryStepSpec, ExperimentalVariable, MechanismSpec,
-    Observable, ProjectStage, ReactionProjectSpec,
+    Observable, ProjectStage, ReactionProjectSpec, WorkflowMode,
 )
 
 
 def project_from_dict(payload: dict) -> ReactionProjectSpec:
+    default_mode = {
+        "mechanism_discovery": "mechanism_only",
+        "yield_optimization": "optimization_only",
+    }.get(payload.get("objective"), "coupled")
     return ReactionProjectSpec(
         project_id=payload["project_id"], title=payload["title"], objective=payload["objective"],
         raw_user_request=payload.get("raw_user_request", ""),
@@ -20,6 +24,7 @@ def project_from_dict(payload: dict) -> ReactionProjectSpec:
         known_conditions=payload.get("known_conditions", {}), constraints=payload.get("constraints", []),
         candidate_reaction_families=payload.get("candidate_reaction_families", []), uncertainties=payload.get("uncertainties", []),
         missing_information=payload.get("missing_information", []), stage=ProjectStage(payload.get("stage", "intake")),
+        workflow_mode=WorkflowMode(payload.get("workflow_mode", default_mode)),
         schema_version=payload.get("schema_version", "1.0"),
     )
 

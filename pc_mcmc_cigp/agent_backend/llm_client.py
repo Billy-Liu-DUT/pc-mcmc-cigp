@@ -10,6 +10,8 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from pc_mcmc_cigp.agent_backend.codecs import mechanism_from_dict, project_from_dict
+from pc_mcmc_cigp.agent_backend.skills import SchemaValidationError, SkillRuntime
+from pc_mcmc_cigp.agent_backend.local_config import load_local_env
 
 
 class LLMConfigurationError(RuntimeError): pass
@@ -27,6 +29,7 @@ class LLMProviderConfig:
 
     @classmethod
     def from_env(cls):
+        load_local_env()
         key=os.environ.get("OPENAI_API_KEY","").strip(); base=os.environ.get("OPENAI_BASE_URL","").strip().rstrip("/"); model=os.environ.get("OPENAI_MODEL","").strip()
         if not key or not base or not model: raise LLMConfigurationError("OPENAI_API_KEY, OPENAI_BASE_URL and OPENAI_MODEL must all be set")
         if not base.startswith("https://"): raise LLMConfigurationError("OPENAI_BASE_URL must use HTTPS")
@@ -36,7 +39,8 @@ class LLMProviderConfig:
 
 
 class CompatibleResponsesClient:
-    def __init__(self,config:LLMProviderConfig,transport:Transport|None=None): self.config=config; self.transport=transport or self._http_transport
+    def __init__(self,config:LLMProviderConfig,transport:Transport|None=None,skill_runtime:SkillRuntime|None=None):
+        self.config=config; self.transport=transport or self._http_transport; self.skills=skill_runtime or SkillRuntime()
     @classmethod
     def from_env(cls): return cls(LLMProviderConfig.from_env())
 
@@ -52,24 +56,56 @@ class CompatibleResponsesClient:
         return mechanism_from_dict(payload)
 
     def chat(self, messages: list[dict], project_context: dict | None = None) -> dict:
-        history = messages[-20:]
-        prompt = f"""Continue a reaction-kinetics project conversation in Chinese.
-Return one JSON object with keys: reply, intent, missing_information, suggested_actions, project_draft.
-intent must be one of clarify, project_draft, experiment_plan, data_review, mechanism_review,
-mcmc_review, cigp_review, general. project_draft is null unless enough information exists; when present
-it follows the ReactionProjectSpec fields. Clearly distinguish known facts from hypotheses. Do not claim
-that an algorithm ran. Never bypass data validation or mechanism approval.
-Current project context: {json.dumps(project_context or {},ensure_ascii=False)}
-Conversation: {json.dumps(history,ensure_ascii=False)}"""
-        payload = self._json_response(
-            "You are the conversational coordinator for a physics-constrained reaction kinetics workflow. Return valid JSON only.",
-            prompt,
-        )
+        history = messages[-20:]; context = dict(project_context or {})
+        last_message = next((str(item.get("content", "")) for item in reversed(history) if item.get("role") == "user"), "")
+        skill = self.skills.route(context.get("stage"), last_message)
+        instructions, prompt = self.skills.render(skill, context, history)
+        payload = self._normalize_skill_payload(skill.name, self._json_response(instructions, prompt), context)
+        repaired = False
+        try:
+            self.skills.validate(skill, payload)
+        except SchemaValidationError as exc:
+            repair_prompt = (
+                f"Repair the JSON to match the schema without adding scientific claims. Errors: {exc.errors}. "
+                f"Invalid JSON: {json.dumps(payload, ensure_ascii=False)}\n{prompt}"
+            )
+            payload = self._normalize_skill_payload(skill.name, self._json_response(instructions, repair_prompt), context)
+            self.skills.validate(skill, payload); repaired = True
         payload.setdefault("reply", "")
         payload.setdefault("intent", "general")
         payload.setdefault("missing_information", [])
         payload.setdefault("suggested_actions", [])
         payload.setdefault("project_draft", None)
+        payload["active_skill"] = skill.name
+        payload["schema_repaired"] = repaired
+        return payload
+
+    @staticmethod
+    def _normalize_skill_payload(skill_name: str, payload: dict, context: dict) -> dict:
+        """Fill compatibility metadata while leaving scientific artifacts schema-checked."""
+        payload = dict(payload)
+        defaults = {
+            "reply": "", "intent": "clarify", "missing_information": [], "suggested_actions": [],
+            "requires_user_confirmation": False, "project_draft": None,
+            "workflow_mode": context.get("workflow_mode", "coupled"),
+        }
+        stage_defaults = {
+            "reaction_intake": "intake", "experiment_design": "experiment_plan_ready",
+            "data_template": "waiting_for_data", "data_quality": "data_validation",
+            "mechanism_hypothesis": "mechanism_proposal", "mcmc_interpretation": "mcmc_review",
+            "cigp_optimization": "optimization_ready",
+        }
+        defaults["current_stage"] = context.get("stage", stage_defaults[skill_name])
+        extras = {
+            "reaction_intake": {"known_facts": [], "hypotheses": []},
+            "experiment_design": {"experiment_plan": []},
+            "data_template": {"data_contract": {}},
+            "data_quality": {"decision": "request_more_data", "blocking_issues": [], "warnings": [], "identifiability_risks": []},
+            "mechanism_hypothesis": {"mechanism_draft": {}, "assumptions": [], "rejected_candidates": []},
+            "mcmc_interpretation": {"decision": "collect_data", "evidence": [], "limitations": [], "proposed_adjustments": []},
+            "cigp_optimization": {"template_source": "predefined", "decision": "propose_experiment", "recommendations": [], "warnings": []},
+        }
+        for key, value in {**defaults, **extras[skill_name]}.items(): payload.setdefault(key, value)
         return payload
 
     def _json_response(self,instructions,prompt):

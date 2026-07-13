@@ -6,10 +6,12 @@ from pathlib import Path
 from typing import Sequence
 
 from pc_mcmc_cigp.agent_backend.experiments import ExperimentDataValidator, ExperimentPlanner, write_experiment_template
+from pc_mcmc_cigp.agent_backend.data_mapping import BenchmarkDataMapper
 from pc_mcmc_cigp.agent_backend.models import MechanismSpec, ProjectStage, ReactionProjectSpec
 from pc_mcmc_cigp.agent_backend.services import AlgorithmService
 from pc_mcmc_cigp.agent_backend.cigp_service import CIGPService
 from pc_mcmc_cigp.agent_backend.store import ProjectStore
+from pc_mcmc_cigp.agent_backend.control import ExperimentLoopController, MCMCTuningPolicy
 
 
 class ReactionAgentWorkflow:
@@ -19,8 +21,11 @@ class ReactionAgentWorkflow:
         self.store = ProjectStore(project_root)
         self.planner = ExperimentPlanner()
         self.validator = ExperimentDataValidator()
+        self.mapper = BenchmarkDataMapper()
         self.algorithms = AlgorithmService()
         self.cigp = CIGPService()
+        self.control = ExperimentLoopController()
+        self.mcmc_tuning = MCMCTuningPolicy()
 
     def create_project(self, project: ReactionProjectSpec) -> Path:
         return self.store.create(project)
@@ -40,18 +45,28 @@ class ReactionAgentWorkflow:
         self.store.transition(project, ProjectStage.WAITING_FOR_DATA)
         return requests
 
-    def ingest_dataset(self, project: ReactionProjectSpec, dataset_path: str | Path):
+    def ingest_dataset(self, project: ReactionProjectSpec, dataset_path: str | Path, *, column_mappings=None):
         if project.stage != ProjectStage.WAITING_FOR_DATA:
             raise ValueError("project must be waiting for data before ingestion")
+        self.store.transition(project, ProjectStage.DATA_MAPPING)
+        mapping = self.mapper.map_csv(project, dataset_path, column_mappings)
+        self.store.save_artifact(project.project_id, "reports", asdict(mapping))
+        if not mapping.valid:
+            report = self.validator.validate_rows(project, list(mapping.normalized_rows))[0]
+            report = replace(report, valid=False, errors=tuple(dict.fromkeys([*mapping.errors, *report.errors])))
+            self.store.save_artifact(project.project_id, "reports", asdict(report))
+            self.store.transition(project, ProjectStage.WAITING_FOR_DATA, "dataset mapping requires correction or confirmation")
+            return report, []
         self.store.transition(project, ProjectStage.DATA_VALIDATION)
-        report, normalized = self.validator.validate(project, dataset_path)
+        report, normalized = self.validator.validate_rows(project, list(mapping.normalized_rows))
         self.store.save_artifact(project.project_id, "reports", asdict(report))
         if not report.valid:
             self.store.transition(project, ProjectStage.WAITING_FOR_DATA, "dataset validation failed")
             return report, []
         dataset_version = self.store.save_artifact(project.project_id, "datasets", normalized)
         report = replace(report, dataset_version=dataset_version.name)
-        self.store.transition(project, ProjectStage.MECHANISM_PROPOSAL)
+        target = ProjectStage.CIGP_MODEL_COMPILATION if project.workflow_mode.value == "optimization_only" else ProjectStage.MECHANISM_PROPOSAL
+        self.store.transition(project, target)
         return report, normalized
 
     def register_mechanism(self, project: ReactionProjectSpec, mechanism: MechanismSpec):
@@ -88,16 +103,38 @@ class ReactionAgentWorkflow:
             raise
 
     def run_cigp(self, project, mcmc_summary, template_name, X, y, bounds, **config):
-        if project.stage != ProjectStage.MCMC_REVIEW:
+        if project.stage not in {ProjectStage.MCMC_REVIEW, ProjectStage.CIGP_MODEL_COMPILATION}:
             raise ValueError("project is not ready to run CIGP")
-        self.store.transition(project, ProjectStage.CIGP_RUNNING)
+        if mcmc_summary is None and project.workflow_mode.value != "optimization_only":
+            raise PermissionError("coupled CIGP requires a PC-MCMC summary")
+        if project.stage == ProjectStage.MCMC_REVIEW:
+            self.store.transition(project, ProjectStage.CIGP_MODEL_COMPILATION)
+        self.store.transition(project, ProjectStage.CIGP_FITTING)
         try:
             report = self.cigp.fit_and_recommend(mcmc_summary, template_name, X, y, bounds, **config)
             self.store.save_artifact(project.project_id, "cigp_runs", asdict(report))
             self.store.transition(project, ProjectStage.OPTIMIZATION_READY)
             return report
         except Exception:
-            self.store.transition(project, ProjectStage.MCMC_REVIEW, "CIGP run failed or was gated")
+            fallback = ProjectStage.DATA_VALIDATION if project.workflow_mode.value == "optimization_only" else ProjectStage.MCMC_REVIEW
+            self.store.transition(project, fallback, "CIGP run failed or was gated")
+            raise
+
+    def run_compiled_cigp(self, project, mechanism, mcmc_summary, target_species, X, y, bounds, **config):
+        if project.stage != ProjectStage.MCMC_REVIEW:
+            raise ValueError("project is not ready to compile the PC-MCMC mechanism for CIGP")
+        self.store.transition(project, ProjectStage.CIGP_MODEL_COMPILATION)
+        self.store.append_event(project.project_id, "cigp_model_compiled", {
+            "source": "pc_mcmc", "mechanism_id": mechanism.mechanism_id, "target_species": target_species,
+        })
+        self.store.transition(project, ProjectStage.CIGP_FITTING)
+        try:
+            report = self.cigp.fit_compiled_and_recommend(mechanism, mcmc_summary, target_species, X, y, bounds, **config)
+            self.store.save_artifact(project.project_id, "cigp_runs", asdict(report))
+            self.store.transition(project, ProjectStage.OPTIMIZATION_READY)
+            return report
+        except Exception:
+            self.store.transition(project, ProjectStage.MCMC_REVIEW, "compiled CIGP run failed or was gated")
             raise
 
 

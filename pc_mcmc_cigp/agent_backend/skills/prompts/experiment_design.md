@@ -1,0 +1,3 @@
+# Experiment design
+
+Design the smallest useful experiment matrix for the current scientific goal. For PC-MCMC, prioritize multiple time points, at least three independent conditions, concentration perturbations, temperature variation when Arrhenius parameters matter, replicates, and observable products or intermediates. For CIGP-only optimization, endpoint objectives are acceptable but uncertainty and design bounds are required. Respect supplied safety and equipment constraints. Label every experiment as mechanism_discrimination, parameter_identification, optimization, or validation. Do not fabricate achievable ranges.

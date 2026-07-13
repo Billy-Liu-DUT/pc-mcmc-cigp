@@ -8,6 +8,7 @@ from pc_mcmc_cigp.acquisition import AcquisitionFactory
 from pc_mcmc_cigp.agent_backend.models import CIGPReport, MCMCSummary, TemplateScore
 from pc_mcmc_cigp.cigp import CIGPConfig, CIGPRegressor
 from pc_mcmc_cigp.kinetics import TemplateRegistry, create_kinetic_template
+from pc_mcmc_cigp.agent_backend.network_kinetics import compile_posterior_kinetics
 
 
 class CIGPService:
@@ -30,9 +31,26 @@ class CIGPService:
         bounds: dict[str, tuple[float, float]], *, objective: str = "maximize_yield", n_candidates: int = 512,
         allow_unconverged_mcmc: bool = False, random_state: int = 0,
     ) -> CIGPReport:
-        if not mcmc.converged and not allow_unconverged_mcmc:
+        if mcmc is not None and not mcmc.converged and not allow_unconverged_mcmc:
             raise PermissionError("CIGP optimization requires converged PC-MCMC or an explicit override")
-        physics = create_kinetic_template(template_name); X = np.asarray(X, dtype=float); y = np.asarray(y, dtype=float).ravel()
+        physics = create_kinetic_template(template_name)
+        return self.fit_model_and_recommend(physics, X, y, bounds, objective=objective, n_candidates=n_candidates, random_state=random_state, template_name=template_name)
+
+    def fit_compiled_and_recommend(
+        self, mechanism, mcmc: MCMCSummary, target_species: str, X, y, bounds,
+        *, inclusion_threshold: float = 0.5, objective: str = "maximize_yield", n_candidates: int = 512,
+        allow_unconverged_mcmc: bool = False, random_state: int = 0,
+    ) -> CIGPReport:
+        if not mcmc.converged and not allow_unconverged_mcmc:
+            raise PermissionError("compiled CIGP requires converged PC-MCMC or an explicit override")
+        physics = compile_posterior_kinetics(mechanism, mcmc, target_species, inclusion_threshold=inclusion_threshold)
+        return self.fit_model_and_recommend(physics, X, y, bounds, objective=objective, n_candidates=n_candidates, random_state=random_state, template_name=f"mcmc_compiled:{mechanism.mechanism_id}")
+
+    def fit_model_and_recommend(
+        self, physics, X, y, bounds, *, objective="maximize_yield", n_candidates=512, random_state=0,
+        template_name="custom",
+    ) -> CIGPReport:
+        X = np.asarray(X, dtype=float); y = np.asarray(y, dtype=float).ravel()
         if tuple(bounds) != tuple(physics.input_names):
             raise ValueError(f"bounds must be ordered exactly as {physics.input_names}")
         lower = np.asarray([bounds[name][0] for name in physics.input_names]); upper = np.asarray([bounds[name][1] for name in physics.input_names])

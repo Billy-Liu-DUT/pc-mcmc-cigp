@@ -101,7 +101,8 @@ class CIGPRegressor:
             L = np.linalg.cholesky(K)
             alpha = np.linalg.solve(L.T, np.linalg.solve(L, residual))
             log_det = 2.0 * np.sum(np.log(np.diag(L)))
-            return float(0.5 * residual.T @ alpha + 0.5 * log_det + 0.5 * len(self.X_train_) * np.log(2 * np.pi))
+            quadratic = float((residual.T @ alpha).item())
+            return 0.5 * quadratic + 0.5 * log_det + 0.5 * len(self.X_train_) * np.log(2 * np.pi)
         except Exception:
             return 1e50
 

@@ -10,6 +10,7 @@ class ProjectStage(str, Enum):
     NEEDS_CLARIFICATION = "needs_clarification"
     EXPERIMENT_PLAN_READY = "experiment_plan_ready"
     WAITING_FOR_DATA = "waiting_for_data"
+    DATA_MAPPING = "data_mapping"
     DATA_VALIDATION = "data_validation"
     MECHANISM_PROPOSAL = "mechanism_proposal"
     WAITING_FOR_MECHANISM_APPROVAL = "waiting_for_mechanism_approval"
@@ -17,22 +18,38 @@ class ProjectStage(str, Enum):
     MCMC_REVIEW = "mcmc_review"
     NEEDS_MORE_DATA = "needs_more_data"
     CIGP_RUNNING = "cigp_running"
+    CIGP_MODEL_COMPILATION = "cigp_model_compilation"
+    CIGP_FITTING = "cigp_fitting"
     OPTIMIZATION_READY = "optimization_ready"
+    WAITING_FOR_NEXT_EXPERIMENT = "waiting_for_next_experiment"
+    FINAL_REVIEW = "final_review"
+
+
+class WorkflowMode(str, Enum):
+    MECHANISM_ONLY = "mechanism_only"
+    OPTIMIZATION_ONLY = "optimization_only"
+    COUPLED = "coupled"
+    ITERATIVE_COUPLED = "iterative_coupled"
 
 
 ALLOWED_TRANSITIONS: dict[ProjectStage, set[ProjectStage]] = {
     ProjectStage.INTAKE: {ProjectStage.NEEDS_CLARIFICATION, ProjectStage.EXPERIMENT_PLAN_READY},
     ProjectStage.NEEDS_CLARIFICATION: {ProjectStage.EXPERIMENT_PLAN_READY},
     ProjectStage.EXPERIMENT_PLAN_READY: {ProjectStage.WAITING_FOR_DATA},
-    ProjectStage.WAITING_FOR_DATA: {ProjectStage.DATA_VALIDATION},
-    ProjectStage.DATA_VALIDATION: {ProjectStage.WAITING_FOR_DATA, ProjectStage.MECHANISM_PROPOSAL},
+    ProjectStage.WAITING_FOR_DATA: {ProjectStage.DATA_MAPPING, ProjectStage.DATA_VALIDATION},
+    ProjectStage.DATA_MAPPING: {ProjectStage.WAITING_FOR_DATA, ProjectStage.DATA_VALIDATION},
+    ProjectStage.DATA_VALIDATION: {ProjectStage.WAITING_FOR_DATA, ProjectStage.MECHANISM_PROPOSAL, ProjectStage.CIGP_MODEL_COMPILATION},
     ProjectStage.MECHANISM_PROPOSAL: {ProjectStage.WAITING_FOR_MECHANISM_APPROVAL},
     ProjectStage.WAITING_FOR_MECHANISM_APPROVAL: {ProjectStage.MECHANISM_PROPOSAL, ProjectStage.MCMC_RUNNING},
     ProjectStage.MCMC_RUNNING: {ProjectStage.MCMC_REVIEW},
-    ProjectStage.MCMC_REVIEW: {ProjectStage.NEEDS_MORE_DATA, ProjectStage.CIGP_RUNNING},
+    ProjectStage.MCMC_REVIEW: {ProjectStage.NEEDS_MORE_DATA, ProjectStage.CIGP_MODEL_COMPILATION, ProjectStage.CIGP_RUNNING, ProjectStage.FINAL_REVIEW},
     ProjectStage.NEEDS_MORE_DATA: {ProjectStage.EXPERIMENT_PLAN_READY, ProjectStage.WAITING_FOR_DATA},
+    ProjectStage.CIGP_MODEL_COMPILATION: {ProjectStage.CIGP_FITTING, ProjectStage.MCMC_REVIEW},
+    ProjectStage.CIGP_FITTING: {ProjectStage.OPTIMIZATION_READY, ProjectStage.MCMC_REVIEW, ProjectStage.DATA_VALIDATION},
     ProjectStage.CIGP_RUNNING: {ProjectStage.OPTIMIZATION_READY},
-    ProjectStage.OPTIMIZATION_READY: {ProjectStage.WAITING_FOR_DATA, ProjectStage.CIGP_RUNNING},
+    ProjectStage.OPTIMIZATION_READY: {ProjectStage.WAITING_FOR_NEXT_EXPERIMENT, ProjectStage.CIGP_FITTING, ProjectStage.FINAL_REVIEW},
+    ProjectStage.WAITING_FOR_NEXT_EXPERIMENT: {ProjectStage.DATA_MAPPING, ProjectStage.FINAL_REVIEW},
+    ProjectStage.FINAL_REVIEW: {ProjectStage.EXPERIMENT_PLAN_READY, ProjectStage.MECHANISM_PROPOSAL, ProjectStage.CIGP_FITTING},
 }
 
 
@@ -80,6 +97,7 @@ class ReactionProjectSpec:
     uncertainties: list[str] = field(default_factory=list)
     missing_information: list[str] = field(default_factory=list)
     stage: ProjectStage = ProjectStage.INTAKE
+    workflow_mode: WorkflowMode = WorkflowMode.COUPLED
     schema_version: str = "1.0"
 
     def transition(self, target: ProjectStage) -> None:
@@ -90,7 +108,27 @@ class ReactionProjectSpec:
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["stage"] = self.stage.value
+        payload["workflow_mode"] = self.workflow_mode.value
         return payload
+
+
+@dataclass(frozen=True)
+class ColumnMapping:
+    source: str
+    target: str
+    conversion: str = "identity"
+    confidence: float = 1.0
+    requires_confirmation: bool = False
+
+
+@dataclass(frozen=True)
+class DataMappingReport:
+    valid: bool
+    mappings: tuple[ColumnMapping, ...]
+    unresolved_columns: tuple[str, ...]
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    normalized_rows: tuple[dict[str, Any], ...]
 
 
 @dataclass(frozen=True)

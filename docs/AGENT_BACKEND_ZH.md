@@ -1,112 +1,104 @@
 # 反应动力学 Agent 后端
 
-该模块先实现不依赖 LLM API 的确定性工作流。LLM 将来只负责把自然语言转成这里定义的结构化协议，并调用经批准的工具；ODE、PC-MCMC 和 CIGP 仍由本地算法执行。
+该后端把自然语言协调和确定性算法分开：LLM 负责澄清目标、设计实验、提出候选机理并解释结果；CSV 解析、单位转换、守恒检查、PC-MCMC、ODE 和 CIGP 由本地代码执行。模型不得虚构实验或算法结果。
 
-## 当前流程
+## 工作模式
 
-1. `ReactionProjectSpec` 保存反应目标、物种、变量、观测量和缺失信息。
-2. `ReactionAgentWorkflow` 依据状态机推进项目，不允许跳过数据验证或机理批准。
-3. `ExperimentPlanner` 生成多温度、时间序列和初始浓度扰动实验。
-4. `ExperimentDataValidator` 检查 CSV 并输出可辨识性风险。
-5. `MechanismCompiler` 把结构化基元步骤编译为化学计量矩阵、速率律和 ODE 引擎。
-6. `AlgorithmService` 调用多链 PC-MCMC并输出面向 Agent 的摘要。
-7. `CIGPService` 选择兼容模板并在收敛门控后推荐实验条件。
+- `mechanism_only`：只完成机理空间设计、PC-MCMC 和路径解释。
+- `optimization_only`：已有可信动力学模型，直接选择公共 CIGP 模板。
+- `coupled`：PC-MCMC 筛选机理后，将后验网络编译成 CIGP 物理均值。
+- `iterative_coupled`：CIGP 新实验可以更新参数，也可以在证据冲突时返回机理发现。
 
-## 项目目录
+## 状态机
 
-每个项目包含：
+主流程为：
 
 ```text
-project.json
-events.jsonl
-datasets/
-experiment_requests/
-mechanisms/
-mcmc_runs/
-cigp_runs/
-reports/
+intake
+  -> experiment_plan_ready
+  -> waiting_for_data
+  -> data_mapping
+  -> data_validation
+  -> mechanism_proposal
+  -> waiting_for_mechanism_approval
+  -> mcmc_running
+  -> mcmc_review
+  -> cigp_model_compilation
+  -> cigp_fitting
+  -> optimization_ready
+  -> waiting_for_next_experiment
 ```
 
-所有数据、机理和结果按 `v001`、`v002` 递增保存，不覆盖历史版本。
+仅优化模式可从数据验证直接进入 `cigp_model_compilation`。机理模式可在 MCMC 审查后结束。迭代模式在新数据否定当前模型时返回 `mechanism_proposal`。
 
-## 为可视化前端准备的接口
+## CSV 数据契约
 
-`FrontendReadModel` 已提供：
+上传格式沿用仓库 benchmark：一行代表一个实验、重复和时间点。
 
-- 项目阶段和当前允许操作；
-- 各类版本化产物数量；
-- 候选机理的节点和边；
-- 六个页面的稳定名称；
-- OpenAI API 是否配置。
+```csv
+experiment_id,replicate,time_s,temperature_K,A0_mol_L,A_mol_L,P_mol_L,yield
+E001,1,0,323.15,1.0,1.0,0.0,0.0
+E001,1,60,323.15,1.0,0.72,0.25,0.25
+```
 
-建议后续前端页面：
+`BenchmarkDataMapper` 支持明确的列别名、分钟转秒、摄氏度转开尔文以及百分数产率转小数。模糊单位必须由用户确认。原始 CSV、映射报告、标准行和最终算法输入分别保存，不静默覆盖。
 
-1. 项目向导；
-2. 实验计划与 CSV 下载；
-3. 数据质量和可辨识性；
-4. 候选机理网络；
-5. MCMC PIP、R-hat、ESS 和后验预测；
-6. CIGP 推荐条件、置信区间和实验历史。
+标准行可以编译成：
 
-正式前端开发前，应在这些读模型之上增加 FastAPI 或等价 HTTP 层，不要让浏览器直接访问算法对象。
+- PC-MCMC：`t`、`y0_full`、`data_matrix`、`obs_indices`，可附带 `temperature` 和实验条件；
+- CIGP：按模板 `input_names` 排序的 `X` 与目标 `y`。
 
-## 本地HTTP与可视化工作台
+## PC-MCMC 与 CIGP 对接
 
-当前已提供不依赖额外Web框架的本地服务：
+PC-MCMC 输出反应和路径包含概率、参数区间、R-hat、ESS、无效求解次数和后验预测误差。改变候选中间体、基元反应、先验、可逆性或参数边界前必须得到用户确认；链数、步数、预热和 proposal scale 等数值配置可以依据诊断调整。
+
+`CompiledNetworkKinetics` 将通过包含概率阈值的反应步骤转成：
+
+```text
+dC/dt = S r(C, T, theta)
+```
+
+化学计量矩阵来自已编译机理，速率律来自每个基元步骤，PC-MCMC 参数区间中点作为 CIGP 初值。CIGP 仍学习物理模型不能解释的残差。预定义模板路线保持可用，因此机理发现和优化既能耦合，也能分开运行。
+
+## 专有 Skill 与 Schema
+
+运行时包含七个专业 Skill：
+
+- `reaction_intake`
+- `experiment_design`
+- `data_template`
+- `data_quality`
+- `mechanism_hypothesis`
+- `mcmc_interpretation`
+- `cigp_optimization`
+
+每个 Skill 有独立 Prompt 和严格 JSON Schema。结构化结果不合格时只允许进行一次无新增科学主张的格式修复；再次失败则停止。对话元数据记录 `active_skill` 和 `schema_repaired`。`GET /api/skills` 返回可供前端调试的阶段、说明和 Schema。
+
+离线检查：
+
+```powershell
+E:\Anaconda3\envs\bayesian\python.exe scripts\evaluate_agent_prompts.py
+```
+
+配置兼容 API 后可以串行实测：
+
+```powershell
+E:\Anaconda3\envs\bayesian\python.exe scripts\evaluate_agent_prompts.py --live
+```
+
+## 启动工作台
+
+在设置 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 和 `OPENAI_MODEL` 的同一终端中运行：
 
 ```powershell
 E:\Anaconda3\envs\bayesian\python.exe scripts\run_agent_web.py
 ```
 
-浏览器访问 `http://127.0.0.1:8765`。页面包括项目定义、实验计划、CSV质控、候选机理、PC-MCMC诊断和CIGP优化。所有科研数据保存在本地 `projects/`，浏览器存储不作为数据源。
+访问 `http://127.0.0.1:8765`。外部模型请求通过全局信号量强制单并发。不要启动多个共享同一密钥的服务进程，因为进程间不能共享该锁。
 
-HTTP层已经提供项目、实验、上传验证、机理注册/批准、PC-MCMC和CIGP端点。PC-MCMC当前为同步请求，只适合短链试运行；正式长链需要后续后台任务队列。
+## 当前仍需完善
 
-## OpenAI API 占位
-
-`config/agent_runtime.example.json` 默认：
-
-```json
-{"api_enabled": false, "openai_model": null}
-```
-
-当前不需要 API Key。以后接入时复制为本地配置，并通过环境变量 `OPENAI_API_KEY` 提供密钥。模型名称保持配置化，不写死在算法代码中。
-
-中转或OpenAI兼容接口可使用 `scripts/probe_llm_api.py` 验证。脚本只从当前进程的 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 和 `OPENAI_MODEL` 环境变量读取配置，不接受命令行明文密钥，也不会保存凭据。只有探测成功后才能将 `api_enabled` 改为 `true`。
-
-### 麒麟云接入CIGP Agent
-
-麒麟云配置助手不是CIGP运行依赖，也不需要点击“接入Codex”。CIGP本地服务直接读取三个进程环境变量：
-
-```powershell
-$env:OPENAI_API_KEY='<在当前终端粘贴新Key>'
-$env:OPENAI_BASE_URL='https://www.qilinapi.com/v1'
-$env:OPENAI_MODEL='gpt-5.5'
-E:\Anaconda3\envs\bayesian\python.exe scripts\probe_llm_api.py
-```
-
-探测返回成功后，在同一个终端启动：
-
-```powershell
-E:\Anaconda3\envs\bayesian\python.exe scripts\run_agent_web.py
-```
-
-网页会显示 `gpt-5.5 · 已配置`，并启用自然语言项目解析和候选机理生成。密钥不会写入项目、浏览器存储或审计日志。关闭该终端后，以上进程环境变量随之消失。
-
-### 对话入口
-
-启动工作台后默认进入“Agent 对话”页面。直接输入反应描述，Agent会追问底物、产物、催化剂、温度范围、观测量等缺失信息。信息足够后页面显示“已形成项目草案”，点击“检查并应用到项目”会把结构化结果填入项目表单。对话记录保存在本地 `projects/.chat_sessions/`；浏览器仅保存会话编号用于刷新后恢复，不保存对话正文。
-
-Agent对话只负责协调工作流：不能绕过数据验证、机理编译或人工批准，也不能在没有真实算法结果时宣称PC-MCMC或CIGP已经运行。
-
-麒麟云通道按并发上限 `1` 使用。CIGP服务内部使用全局信号量串行发送所有LLM请求；即使浏览器同时触发项目解析和机理生成，也只会有一个外部请求处于执行状态。不要启动多个独立CIGP服务进程共用同一密钥，否则进程间无法共享这个并发锁。
-
-2026-07-12实测：`/v1/models` 和 `/v1/responses` 均返回HTTP 200，模型列表包含 `gpt-5.5`，Responses响应确认实际模型为 `gpt-5.5`。该验证仅说明当前Key和渠道在测试时可用，不应把Key写入仓库或日志。
-
-## 尚未实现
-
-- OpenAI Responses API / Agents SDK；
-- 自然语言到 `ReactionProjectSpec` 和 `MechanismSpec` 的转换；
-- 后台长任务的异步HTTP任务状态与实时进度；
-- 仪器厂商原始格式适配；
-- 后台任务队列与长时间 MCMC 进度推送。
+- 长链 PC-MCMC 的后台任务队列、取消、进度推送和断点恢复；
+- GC/HPLC 厂商文件及 Excel 多表自动适配；
+- 前端完整的字段映射确认、机理差异审批和动态 CIGP 模型展示；
+- 更大规模真实有机反应数据上的 Prompt 与机理候选生成评测。

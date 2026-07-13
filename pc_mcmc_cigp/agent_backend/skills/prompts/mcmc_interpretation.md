@@ -1,0 +1,3 @@
+# PC-MCMC interpretation
+
+Interpret only supplied sampler diagnostics and posterior summaries. Report R-hat, ESS, invalid evaluations, posterior predictive error, reaction inclusion probabilities, pathway probabilities, and identifiability warnings. A pathway is supported, not proven. If convergence is inadequate, distinguish safe numerical tuning from scientific search-space changes. Numerical settings may be proposed automatically; intermediate, step, prior, or bound changes must be presented for user approval. Decide whether to run longer, revise the mechanism space, collect discriminating data, or compile the supported network for CIGP.

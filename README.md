@@ -113,10 +113,10 @@ Run `python examples/kinetic_template_gallery.py` for representative CIGP fits.
 
 ## Agent-ready deterministic backend
 
-`pc_mcmc_cigp.agent_backend` provides the API-independent foundation for a
-future natural-language reaction agent: project state, experiment requests,
-CSV validation, mechanism compilation, approval-gated PC-MCMC, CIGP template
-screening, versioned artifacts, audit events, and frontend JSON read models.
+`pc_mcmc_cigp.agent_backend` provides a gated natural-language reaction agent:
+project state, experiment requests, benchmark-compatible CSV mapping,
+approval-gated PC-MCMC, posterior-network-to-CIGP compilation, predefined CIGP
+templates, versioned artifacts, audit events, and frontend JSON read models.
 
 No OpenAI API key is required. Run:
 
@@ -125,6 +125,17 @@ python examples/agent_backend_workflow.py
 ```
 
 See `docs/AGENT_BACKEND_ZH.md` for the workflow and explicit unfinished items.
+
+The agent uses seven stage-specific prompt skills with strict JSON Schemas.
+Inspect their public contracts at `GET /api/skills`. Run the offline routing and
+schema regression suite with:
+
+```bash
+python scripts/evaluate_agent_prompts.py
+```
+
+Add `--live` only after configuring the three provider environment variables;
+live cases are sent sequentially because provider concurrency is fixed at one.
 
 Start the local visual workbench without an API key or web-framework install:
 
@@ -144,6 +155,10 @@ For an optional OpenAI-compatible LLM provider, set `OPENAI_API_KEY`,
 `OPENAI_BASE_URL`, and `OPENAI_MODEL` in the server process. Validate the
 provider first with `python scripts/probe_llm_api.py`; credentials are never
 accepted as command-line arguments or written by the application.
+
+To store credentials only in the ignored local `.env.local` file, run
+`python scripts/configure_llm.py`. The key is entered with hidden input and is
+never printed. Environment variables still take precedence over the file.
 - `examples/`: runnable scripts for paper-style experiments and baselines.
 
 Chinese documentation:

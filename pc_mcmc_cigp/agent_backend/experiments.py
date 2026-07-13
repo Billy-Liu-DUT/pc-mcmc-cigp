@@ -73,6 +73,44 @@ def write_experiment_template(project: ReactionProjectSpec, requests: Sequence[E
 
 
 class ExperimentDataValidator:
+    def validate_rows(self, project: ReactionProjectSpec, rows: Sequence[dict]) -> tuple[DataValidationReport, list[dict]]:
+        errors, warnings, risks = [], [], []
+        columns = {key for row in rows for key in row}
+        missing = {"experiment_id", "time_s"} - columns
+        if missing: errors.append(f"missing required columns: {', '.join(sorted(missing))}")
+        expected_species = [item.name for item in [*project.reactants, *project.known_products]]
+        species_columns = {name: self._find_species_column(columns, name) for name in expected_species}
+        missing_species = [name for name, column in species_columns.items() if column is None]
+        if missing_species and project.workflow_mode.value != "optimization_only":
+            errors.append(f"missing concentration columns: {', '.join(missing_species)}")
+        groups: dict[str, list[dict]] = {}
+        for index, row in enumerate(rows, start=2):
+            try:
+                if float(row.get("time_s", 0.0)) < 0: errors.append(f"row {index}: negative time")
+            except (TypeError, ValueError): errors.append(f"row {index}: time_s is not numeric")
+            for name, column in species_columns.items():
+                if column and column in row and float(row[column]) < 0: errors.append(f"row {index}: negative {name} concentration")
+            groups.setdefault(str(row.get("experiment_id", "")), []).append(row)
+        for experiment_id, group in groups.items():
+            times = [float(row.get("time_s", np.nan)) for row in group]
+            if not any(np.isclose(times, 0.0)): warnings.append(f"{experiment_id}: no zero-time observation")
+            if times != sorted(times): warnings.append(f"{experiment_id}: rows are not ordered by time")
+        coverage = {
+            name: 0.0 if column is None or not rows else sum(column in row for row in rows) / len(rows)
+            for name, column in species_columns.items()
+        }
+        temperatures = {row.get("temperature_K") for row in rows if "temperature_K" in row}
+        if len(temperatures) < 3: risks.append("Arrhenius A and Ea may not be identifiable with fewer than three temperatures")
+        if len(groups) < 3: risks.append("Mechanism discrimination is weak with fewer than three experimental conditions")
+        observed_candidates = any(self._find_species_column(columns, item.name) for item in project.suspected_intermediates)
+        if project.suspected_intermediates and not observed_candidates: risks.append("Suspected intermediates are unobserved")
+        if project.workflow_mode.value != "optimization_only" and all(len(group) <= 1 for group in groups.values()):
+            risks.append("Endpoint-only data are insufficient for reliable mechanism discrimination")
+        if not rows: errors.append("dataset contains no rows")
+        valid = not errors and bool(rows)
+        report = DataValidationReport(valid, tuple(dict.fromkeys(errors)), tuple(dict.fromkeys(warnings)), None, coverage, {}, tuple(risks), None)
+        return report, list(rows)
+
     def validate(self, project: ReactionProjectSpec, path: str | Path) -> tuple[DataValidationReport, list[dict[str, float | str]]]:
         path = Path(path); errors, warnings, risks = [], [], []
         if not path.exists():

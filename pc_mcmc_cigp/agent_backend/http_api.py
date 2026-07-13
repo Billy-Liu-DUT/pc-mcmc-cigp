@@ -15,6 +15,9 @@ from pc_mcmc_cigp.agent_backend.workflow import ReactionAgentWorkflow
 from pc_mcmc_cigp.agent_backend.models import MCMCSummary
 from pc_mcmc_cigp.agent_backend.llm_client import CompatibleResponsesClient, LLMConfigurationError, LLMRequestError, client_status
 from pc_mcmc_cigp.agent_backend.chat import ConversationService
+from pc_mcmc_cigp.agent_backend.skills import SkillRuntime
+from pc_mcmc_cigp.agent_backend.data_mapping import build_cigp_training_data
+from pc_mcmc_cigp.agent_backend.network_kinetics import compile_posterior_kinetics
 
 
 class ReactionAPI:
@@ -23,6 +26,7 @@ class ReactionAPI:
         self.frontend = FrontendReadModel(self.workflow.store)
         self.static_root = Path(static_root).resolve()
         self.conversation = ConversationService(project_root)
+        self.skills = SkillRuntime()
 
     def dispatch(self, method: str, path: str, payload: dict | None = None) -> tuple[int, dict | bytes, str]:
         payload = payload or {}; parts = [item for item in path.strip("/").split("/") if item]
@@ -30,6 +34,11 @@ class ReactionAPI:
             return 200, {"status": "ok", "api": api_placeholder_status(), "service": "pc-mcmc-cigp"}, "application/json"
         if path == "/api/templates" and method == "GET":
             return 200, {"templates": available_template_contracts()}, "application/json"
+        if path == "/api/skills" and method == "GET":
+            return 200, {"skills": [
+                {"name": item.name, "stages": item.stages, "description": item.description, "schema": self.skills.schema(item)}
+                for item in self.skills.registry.list()
+            ]}, "application/json"
         if path == "/api/llm/status" and method == "GET":
             return 200, client_status(), "application/json"
         if path == "/api/llm/parse-project" and method == "POST":
@@ -54,7 +63,7 @@ class ReactionAPI:
         if len(parts) == 5 and parts[:2] == ["api", "projects"] and parts[3:] == ["datasets", "validate"] and method == "POST":
             project = project_from_dict(self.workflow.store.load(parts[2])); incoming = self.workflow.store.root / parts[2] / "incoming.csv"
             incoming.write_text(payload.get("csv_text", ""), encoding="utf-8", newline="")
-            report, rows = self.workflow.ingest_dataset(project, incoming)
+            report, rows = self.workflow.ingest_dataset(project, incoming, column_mappings=payload.get("column_mappings"))
             return (200 if report.valid else 422), {"project": project.to_dict(), "report": asdict(report), "row_count": len(rows)}, "application/json"
         if path == "/api/mechanisms/compile" and method == "POST":
             spec = mechanism_from_dict(payload); compiled = self.workflow.algorithms.compile_mechanism(spec)
@@ -73,8 +82,27 @@ class ReactionAPI:
             summary = self.workflow.run_mcmc(project, spec, rows, sources=payload["sources"], targets=payload["targets"], **config)
             return 200, {"project": project.to_dict(), "summary": asdict(summary)}, "application/json"
         if len(parts) == 5 and parts[:2] == ["api", "projects"] and parts[3:] == ["cigp", "run"] and method == "POST":
-            project = project_from_dict(self.workflow.store.load(parts[2])); mcmc = MCMCSummary(**payload["mcmc_summary"])
-            report = self.workflow.run_cigp(project, mcmc, payload["template_name"], payload["X"], payload["y"], payload["bounds"], **payload.get("config", {}))
+            project = project_from_dict(self.workflow.store.load(parts[2]))
+            mcmc = MCMCSummary(**payload["mcmc_summary"]) if payload.get("mcmc_summary") else None
+            if payload.get("template_source") == "mcmc_compiled":
+                if mcmc is None:
+                    raise ValueError("mcmc_compiled template_source requires mcmc_summary")
+                mechanism = mechanism_from_dict(payload["mechanism"])
+                dataset_path = self.workflow.store.root / parts[2] / "datasets" / payload.get("dataset_version", "v001.json")
+                rows = json.loads(dataset_path.read_text(encoding="utf-8"))
+                preview = compile_posterior_kinetics(
+                    mechanism, mcmc, payload["target_species"],
+                    inclusion_threshold=payload.get("inclusion_threshold", 0.5),
+                )
+                X, y = build_cigp_training_data(
+                    rows, preview, payload.get("target_column", f"{payload['target_species']}_mol_L")
+                )
+                report = self.workflow.run_compiled_cigp(
+                    project, mechanism, mcmc, payload["target_species"], X, y, payload["bounds"],
+                    **payload.get("config", {}),
+                )
+            else:
+                report = self.workflow.run_cigp(project, mcmc, payload["template_name"], payload["X"], payload["y"], payload["bounds"], **payload.get("config", {}))
             return 200, {"project": project.to_dict(), "report": asdict(report)}, "application/json"
         return self._static(path) if method == "GET" and not path.startswith("/api/") else (404, {"error": "route_not_found", "path": path}, "application/json")
 

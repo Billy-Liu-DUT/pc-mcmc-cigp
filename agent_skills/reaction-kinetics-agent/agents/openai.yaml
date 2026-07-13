@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reaction Kinetics Agent"
+  short_description: "Plan kinetic experiments and coordinate PC-MCMC/CIGP workflows"
+  default_prompt: "Use $reaction-kinetics-agent to guide this reaction project through data collection, PC-MCMC mechanism discovery, and CIGP optimization with explicit scientific gates."

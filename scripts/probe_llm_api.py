@@ -3,8 +3,14 @@ from __future__ import annotations
 import json
 import os
 import sys
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from pc_mcmc_cigp.agent_backend.local_config import load_local_env
 
 
 def request_json(url: str, key: str, payload: dict | None = None) -> tuple[int, dict]:
@@ -65,6 +71,7 @@ def response_output_text(body: dict) -> str | None:
 
 
 def main() -> int:
+    load_local_env(ROOT / ".env.local")
     key = os.environ.get("OPENAI_API_KEY", "").strip()
     base = os.environ.get("OPENAI_BASE_URL", "").strip().rstrip("/")
     model = os.environ.get("OPENAI_MODEL", "gpt-5.5").strip()
