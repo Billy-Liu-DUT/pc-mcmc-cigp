@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from getpass import getpass
 from pathlib import Path
 
@@ -24,17 +25,33 @@ def valid_key(key: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Save an ignored local LLM provider configuration")
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument(
         "--from-clipboard", action="store_true", help="read the API key from the Windows clipboard"
     )
+    source.add_argument("--from-stdin", action="store_true", help="read the API key from standard input")
+    parser.add_argument("--base-url", default="https://www.qilinapi.com/v1")
+    parser.add_argument("--model", default="gpt-5.5")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    key = (clipboard_text() if args.from_clipboard else getpass("Paste API key (input hidden): ")).strip()
+    if args.from_clipboard:
+        key = clipboard_text().strip()
+    elif args.from_stdin:
+        key = sys.stdin.read().strip()
+    else:
+        key = getpass("Paste API key (input hidden): ").strip()
     if not valid_key(key):
-        print("The key is invalid or paste was not captured; configuration was not changed.")
+        print(
+            "The key is invalid or paste was not captured; configuration was not changed. "
+            f"Received length={len(key)}, starts_with_sk={key.startswith('sk-')}, "
+            f"printable={all(character.isprintable() for character in key)}."
+        )
         return 2
-    base = input("Base URL [https://www.qilinapi.com/v1]: ").strip() or "https://www.qilinapi.com/v1"
-    model = input("Model [gpt-5.5]: ").strip() or "gpt-5.5"
+    if args.from_clipboard or args.from_stdin:
+        base, model = args.base_url.strip(), args.model.strip()
+    else:
+        base = input(f"Base URL [{args.base_url}]: ").strip() or args.base_url
+        model = input(f"Model [{args.model}]: ").strip() or args.model
     if not base.startswith("https://"):
         print("Base URL must use HTTPS; configuration was not changed.")
         return 2
